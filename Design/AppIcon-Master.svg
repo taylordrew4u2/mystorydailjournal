@@ -11,8 +11,8 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <rect width="1024" height="1024" fill="#F4F1EC"/>
   <g>
-    <rect x="222" y="144" width="580" height="740" rx="30" fill="#1F2129"/>
-    <path d="M222 174 a30 30 0 0 1 30 -30 h122 v740 h-122 a30 30 0 0 1 -30 -30 Z" fill="#171820"/>
-    <line x1="374" y1="154" x2="374" y2="874" stroke="#12131A" stroke-width="7"/>
+    <rect x="192" y="102" width="640" height="820" rx="64" fill="#1F2129"/>
+    <path d="M192 166 a64 64 0 0 1 64 -64 h57.6 v820 h-57.6 a64 64 0 0 1 -64 -64 Z" fill="#171820"/>
+    <line x1="313.6" y1="112" x2="313.6" y2="912" stroke="#12131A" stroke-width="7"/>
   </g>
 </svg>

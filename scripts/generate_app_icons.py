@@ -34,13 +34,19 @@ def darken(color, factor=0.72):
 def make_icon(accent, out_path):
     final = Image.new("RGB", (SIZE, SIZE), BACKGROUND)
 
-    book_w, book_h = 580, 740
+    # Larger, more confident fill of the canvas than the first pass (was
+    # 580x740, a lot of dead paper-white margin once the OS masks the
+    # square into its rounded shape) plus a bigger corner radius that
+    # reads as an intentional glyph rather than a barely-rounded box, and
+    # a narrower spine strip proportioned like an actual book cover
+    # rather than a wide two-tone split.
+    book_w, book_h = 640, 820
     x0 = (SIZE - book_w) // 2
     y0 = (SIZE - book_h) // 2
     x1 = x0 + book_w
     y1 = y0 + book_h
-    radius = 30
-    spine_x = x0 + int(book_w * 0.26)
+    radius = 64
+    spine_x = x0 + int(book_w * 0.19)
 
     # Front cover, full book shape, flat accent fill (rounded corners)
     mask = Image.new("L", (SIZE, SIZE), 0)

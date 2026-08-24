@@ -221,8 +221,11 @@ milestone the build spec describes, including the one it labels deferred.
   `UIApplication.setAlternateIconName` — switching the palette updates the
   tint and the home screen icon together, per §17's acceptance criterion.
   Honest caveat: this is a functional icon set, not final production
-  art — a hand-finished pass per preset is still real design work someone
-  should do before shipping.
+  art. The geometry has had one polish pass (larger fill of the canvas,
+  a more contemporary corner radius, a narrower spine than the first
+  cut) but it's still a programmatically generated flat shape — a
+  hand-finished pass per preset is real design work someone should still
+  do before shipping.
 - **`PRIVACY.md`** — the App Store Connect App Privacy questionnaire
   answer key: every data type this app touches, and why "Data Not
   Collected" is the accurate (not just favorable) declaration for each,
