@@ -60,11 +60,17 @@ final class DayRecord {
         source == .userWritten || source == .converted
     }
 
-    /// First line of body text, used for list-row previews.
+    /// First line of body text, used for list-row previews. A tag-only day
+    /// (§5 item 4: a tag alone "counts as journaled") has no body text, so
+    /// this falls back to the tag names rather than reading as blank.
     var previewLine: String {
-        bodyText
+        let firstLine = bodyText
             .split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: true)
             .first
             .map(String.init) ?? ""
+        guard firstLine.isEmpty else { return firstLine }
+
+        let tagNames = (tags ?? []).map(\.name)
+        return tagNames.isEmpty ? "" : tagNames.joined(separator: ", ")
     }
 }

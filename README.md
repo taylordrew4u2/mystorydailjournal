@@ -44,8 +44,8 @@ milestone the build spec describes, including the one it labels deferred.
 - **Optional app lock** — Face ID/Touch ID via `LocalAuthentication` and/or
   a custom code in the Keychain, off by default, offered once.
 - **Curated accent-color palette** — eight presets, applied via `.tint()`;
-  no free color picker, since each preset will eventually need its own
-  hand-finished home-screen icon (M9).
+  no free color picker, since each preset needs its own home-screen icon
+  variant (M9).
 - **"Your Data" screen** — plain-language, in-app statement that nothing
   leaves the device except the user's own iCloud account.
 
