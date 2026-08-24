@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 /// Local, device-specific preferences (build spec §7: "these are local
 /// preferences, not part of the CloudKit-synced DayRecord store"). Backed by
@@ -40,8 +41,17 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(followUpIntervalMinutes, forKey: Keys.followUpMinutes) }
     }
 
+    /// §17 acceptance criteria: "Switching palette presets updates the
+    /// in-app tint and the home screen icon together." `didSet` doesn't
+    /// fire for the assignment inside `init` (Swift property-observer
+    /// semantics), only for later changes — which is exactly right here,
+    /// since `setAlternateIconName` shouldn't be called before the app has
+    /// finished launching.
     @Published var theme: Theme {
-        didSet { defaults.set(theme.rawValue, forKey: Keys.theme) }
+        didSet {
+            defaults.set(theme.rawValue, forKey: Keys.theme)
+            UIApplication.shared.setAlternateIconName(theme.alternateIconName)
+        }
     }
 
     @Published var appLockEnabled: Bool {

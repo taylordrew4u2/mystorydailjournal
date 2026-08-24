@@ -31,6 +31,52 @@
 	</dict>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>AppIcon-forest</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-forest</string>
+			</dict>
+			<key>AppIcon-rust</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-rust</string>
+			</dict>
+			<key>AppIcon-slate</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-slate</string>
+			</dict>
+			<key>AppIcon-plum</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-plum</string>
+			</dict>
+			<key>AppIcon-ochre</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-ochre</string>
+			</dict>
+			<key>AppIcon-moss</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-moss</string>
+			</dict>
+			<key>AppIcon-midnight</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-midnight</string>
+			</dict>
+		</dict>
+	</dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.mystorydailyjournal.app.digest-refresh</string>

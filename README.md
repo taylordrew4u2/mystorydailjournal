@@ -5,15 +5,16 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 – M8
+## What's here: M1 – M9
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
 before anything else. M2 (fast capture), M3 (signal providers), M4 (digest
 generation), M5 (precise location + people), M6 (CloudKit sync), M7 (Live
-Activity, Control Center, Share Extension), and M8 (automated ingestion)
-followed directly on top.
+Activity, Control Center, Share Extension), M8 (automated ingestion), and
+M9 (lock/trust confirmation, alternate icons, privacy) followed directly
+on top.
 
 ### M1 — Core loop
 
@@ -197,9 +198,32 @@ followed directly on top.
   pushed in by these independent paths. It now only clears signals it
   collects itself.
 
-Not yet built (see Roadmap below): the Screen Time panel and the alternate
-app icons/trust items. None of these are missing by oversight — the build
-spec explicitly sequences them into M9 and M10.
+### M9 — Lock/trust confirmation, alternate icons, App Privacy
+
+- **App lock and "Your Data"** were already built end to end back in M1
+  (§7's own step sequencing puts them there) — this pass re-reviewed both
+  rather than rebuilding them, and found nothing to change.
+- **Alternate app icons** — a real, if intentionally provisional,
+  `Design/AppIcon-Master.svg` (closed book, visible spine, one shading
+  tone, no gradients, no text — §17's own description) rendered into all
+  eight palette presets via `scripts/generate_app_icons.py`
+  (`AppIcon.appiconset` for ink, `AppIcon-<theme>.appiconset` for the
+  rest), wired through `CFBundleIcons`/`CFBundleAlternateIcons` in
+  Info.plist. `SettingsStore.theme`'s `didSet` now calls
+  `UIApplication.setAlternateIconName` — switching the palette updates the
+  tint and the home screen icon together, per §17's acceptance criterion.
+  Honest caveat: this is a functional icon set, not final production
+  art — a hand-finished pass per preset is still real design work someone
+  should do before shipping.
+- **`PRIVACY.md`** — the App Store Connect App Privacy questionnaire
+  answer key: every data type this app touches, and why "Data Not
+  Collected" is the accurate (not just favorable) declaration for each,
+  per §12's own reasoning.
+
+Not yet built (see Roadmap below): the Screen Time panel, the optional
+on-device digest rewrite, and the optional nearby-people handshake. None
+of these are missing by oversight — the build spec explicitly sequences
+them into M10, which it calls out as deferred.
 
 ## Building
 
@@ -278,8 +302,6 @@ guided-entry composition, and tag logging.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M9** — App-lock end-to-end confirmation, "Your Data" screen (both
-  already present in M1), alternate app icons, App Privacy questionnaire.
 - **M10** — Family Controls entitlement + `DeviceActivityReport`,
   optional on-device digest rewrite, optional nearby-people Bluetooth
   handshake.

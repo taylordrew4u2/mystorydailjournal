@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Master vector for the app icon mark (build spec §17): a closed book,
+  simple silhouette, visible spine line, no page detail, no text. Flat
+  fill, at most one shading tone, no gradients.
+
+  This is the source shape every palette variant is rendered from
+  (scripts/generate_app_icons.py) — accent and spine-shade colors are the
+  only things that change per preset; geometry stays identical.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" fill="#F4F1EC"/>
+  <g>
+    <rect x="222" y="144" width="580" height="740" rx="30" fill="#1F2129"/>
+    <path d="M222 174 a30 30 0 0 1 30 -30 h122 v740 h-122 a30 30 0 0 1 -30 -30 Z" fill="#171820"/>
+    <line x1="374" y1="154" x2="374" y2="874" stroke="#12131A" stroke-width="7"/>
+  </g>
+</svg>
