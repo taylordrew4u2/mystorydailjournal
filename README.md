@@ -5,14 +5,13 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 – M4
+## What's here: M1 – M5
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
-before anything else. M2 (fast capture), M3 (signal providers), and M4
-(digest generation — the payoff of collecting all those signals) followed
-directly on top.
+before anything else. M2 (fast capture), M3 (signal providers), M4 (digest
+generation), and M5 (precise location + people) followed directly on top.
 
 ### M1 — Core loop
 
@@ -105,10 +104,27 @@ directly on top.
   "Convert" swipe action that now opens the entry for editing instead of
   silently relabeling it.
 
+### M5 — Precision location + people
+
+- **Full-accuracy location** — a Settings toggle on top of the base
+  "Places visited" signal; when on, `LocationVisitMonitor.captureExactLocation`
+  requests the temporary full-accuracy grant, takes one on-demand fix when
+  today's entry opens (never continuous tracking), and reverse-geocodes to
+  a street-level placemark only if that grant actually came through,
+  falling back to the same neighborhood-level naming visits use otherwise.
+- **One-tap person tagging** — a "With" row of already-tagged people, a
+  recent-people row sourced from the last ~60 days, and free-text "add
+  someone new," all going through `PeopleRepository` so "the same person"
+  is recognized by name across days.
+- **Calendar-attendee suggestions** — a dashed-border suggestion row built
+  from the attendee names M3's `CalendarSignalProvider` already collects;
+  tapping one is what turns it into a real, confirmed `Person` tag — it's
+  never written as fact on its own.
+
 Not yet built (see Roadmap below): CloudKit sync, Live Activity, Share
 Extension, Shortcuts ingestion, Screen Time panel, and the alternate app
 icons. None of these are missing by oversight — the build spec explicitly
-sequences them into M5 through M10.
+sequences them into M6 through M10.
 
 ## Building
 
@@ -187,8 +203,6 @@ guided-entry composition, and tag logging.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M5** — Full-accuracy location flow, person tagging, attendee
-  suggestions.
 - **M6** — CloudKit sync via SwiftData, account-status handling,
   offline-first verification.
 - **M7** — Live Activity, Control Center control, Share Extension.

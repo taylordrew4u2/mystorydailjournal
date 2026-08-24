@@ -24,7 +24,19 @@ struct EntryView: View {
         }
         .navigationTitle(date, format: .dateTime.month(.wide).day().year())
         .navigationBarTitleDisplayMode(.inline)
-        .task { loadRecord() }
+        .task {
+            loadRecord()
+            await capturePreciseLocationIfNeeded()
+        }
+    }
+
+    /// The "on-demand fix at a meaningful moment" from §3 — writing to
+    /// today, specifically, rather than continuous tracking. A no-op for
+    /// any other day, or when precise location isn't turned on.
+    private func capturePreciseLocationIfNeeded() async {
+        guard DateUtilities.startOfDay(for: date) == DateUtilities.startOfDay(for: .now) else { return }
+        guard settings.locationEnabled, settings.fullAccuracyLocationEnabled else { return }
+        await LocationVisitMonitor.shared.captureExactLocation(for: date)
     }
 
     @ViewBuilder
@@ -37,6 +49,9 @@ struct EntryView: View {
 
             TagChipRow(date: date)
                 .padding(.top, 12)
+
+            PersonChipsSection(record: record)
+                .padding(.top, 8)
 
             if mode != nil {
                 Picker("Mode", selection: modeBinding) {

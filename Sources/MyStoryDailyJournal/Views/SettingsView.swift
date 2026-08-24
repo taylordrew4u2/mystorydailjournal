@@ -32,6 +32,16 @@ struct SettingsView: View {
                 Toggle("Calendar events", isOn: calendarBinding)
                 Toggle("Photos", isOn: photosBinding)
                 Toggle("Places visited", isOn: locationBinding)
+                if settings.locationEnabled {
+                    Toggle("Precise location", isOn: fullAccuracyBinding)
+                }
+            }
+            if settings.locationEnabled && settings.fullAccuracyLocationEnabled {
+                Section {
+                    Text("When precise location is on, opening today's entry takes one exact fix — never a continuous track.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Appearance") {
@@ -133,6 +143,22 @@ struct SettingsView: View {
                 } else {
                     LocationVisitMonitor.shared.stopMonitoringVisits()
                     settings.locationEnabled = false
+                    settings.fullAccuracyLocationEnabled = false
+                }
+            }
+        )
+    }
+
+    /// The second, explicit ask on top of `locationEnabled` (§3, §12).
+    private var fullAccuracyBinding: Binding<Bool> {
+        Binding(
+            get: { settings.fullAccuracyLocationEnabled },
+            set: { newValue in
+                settings.fullAccuracyLocationEnabled = newValue
+                if newValue {
+                    LocationVisitMonitor.shared.requestTemporaryFullAccuracy(
+                        purposeKey: LocationVisitMonitor.fullAccuracyPurposeKey
+                    )
                 }
             }
         )
