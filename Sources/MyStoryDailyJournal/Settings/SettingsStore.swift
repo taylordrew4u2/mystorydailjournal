@@ -56,6 +56,33 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(appLockDelayMinutes, forKey: Keys.appLockDelay) }
     }
 
+    /// Per-signal opt-in toggles (§12: "Every signal individually
+    /// disableable"). HealthKit exposes no readable authorization status
+    /// for read-only access, so `healthEnabled` doubles as this app's own
+    /// record of "the user granted this" — set only after a successful
+    /// `requestAuthorization` call, never assumed.
+    @Published var healthEnabled: Bool {
+        didSet { defaults.set(healthEnabled, forKey: Keys.healthEnabled) }
+    }
+
+    @Published var calendarEnabled: Bool {
+        didSet { defaults.set(calendarEnabled, forKey: Keys.calendarEnabled) }
+    }
+
+    @Published var photosEnabled: Bool {
+        didSet { defaults.set(photosEnabled, forKey: Keys.photosEnabled) }
+    }
+
+    @Published var locationEnabled: Bool {
+        didSet { defaults.set(locationEnabled, forKey: Keys.locationEnabled) }
+    }
+
+    /// Separate from `locationEnabled` per §12: full street-level accuracy
+    /// is a second, explicit ask on top of place-level Always authorization.
+    @Published var fullAccuracyLocationEnabled: Bool {
+        didSet { defaults.set(fullAccuracyLocationEnabled, forKey: Keys.fullAccuracyLocation) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -69,6 +96,11 @@ final class SettingsStore: ObservableObject {
         appLockEnabled = defaults.bool(forKey: Keys.appLockEnabled)
         appLockMethod = AppLockMethod(rawValue: defaults.string(forKey: Keys.appLockMethod) ?? "") ?? .biometric
         appLockDelayMinutes = defaults.object(forKey: Keys.appLockDelay) as? Int ?? 0
+        healthEnabled = defaults.bool(forKey: Keys.healthEnabled)
+        calendarEnabled = defaults.bool(forKey: Keys.calendarEnabled)
+        photosEnabled = defaults.bool(forKey: Keys.photosEnabled)
+        locationEnabled = defaults.bool(forKey: Keys.locationEnabled)
+        fullAccuracyLocationEnabled = defaults.bool(forKey: Keys.fullAccuracyLocation)
     }
 
     /// The active question set for guided entries: a starter set, or the
@@ -91,5 +123,10 @@ final class SettingsStore: ObservableObject {
         static let appLockEnabled = "settings.appLockEnabled"
         static let appLockMethod = "settings.appLockMethod"
         static let appLockDelay = "settings.appLockDelayMinutes"
+        static let healthEnabled = "settings.healthEnabled"
+        static let calendarEnabled = "settings.calendarEnabled"
+        static let photosEnabled = "settings.photosEnabled"
+        static let locationEnabled = "settings.locationEnabled"
+        static let fullAccuracyLocation = "settings.fullAccuracyLocationEnabled"
     }
 }

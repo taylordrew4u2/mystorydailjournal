@@ -7,7 +7,12 @@ import Foundation
 /// disableable. A denied or unimplemented provider must degrade only its own
 /// signal — digest assembly (§9) has to keep working with whatever subset of
 /// providers returns results.
-protocol DaySignalProvider: Sendable {
+///
+/// Deliberately not `Sendable`: several concrete providers wrap SDK types
+/// (`HKHealthStore`, `EKEventStore`, `CLLocationManager`) that aren't
+/// themselves Sendable. Digest assembly calls providers serially from one
+/// isolation context rather than passing them across concurrency domains.
+protocol DaySignalProvider {
     var kind: DaySignalKind { get }
 
     /// Whether the user has granted whatever system permission this provider

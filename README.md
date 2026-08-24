@@ -5,12 +5,13 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 + M2
+## What's here: M1 – M3
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
-before anything else. M2 (fast capture) followed directly on top.
+before anything else. M2 (fast capture) and M3 (signal providers) followed
+directly on top.
 
 ### M1 — Core loop
 
@@ -65,11 +66,28 @@ before anything else. M2 (fast capture) followed directly on top.
   app-group container so the host app and the widget extension read and
   write the same SwiftData store.
 
-Not yet built (see Roadmap below): background signal providers (Health,
-Calendar, Photos, Location), digest generation, CloudKit sync, Live
+### M3 — Signal providers
+
+- **`HealthSignalProvider`** — steps, walking/running distance, workout
+  summaries via `HKStatisticsQuery`/`HKSampleQuery`.
+- **`CalendarSignalProvider`** — attended events (declined/canceled
+  filtered out) via `EKEventStore`; attendee names ride along for M5's
+  suggestion chips but are never written anywhere unconfirmed.
+- **`PhotosSignalProvider`** — photo/screenshot counts via `PHAsset`
+  fetches; stores local identifiers only, never image bytes.
+- **`LocationVisitMonitor` + `LocationSignalProvider`** — place-level
+  `CLVisit`s captured live (there's no API to pull visit history on
+  demand) and written straight to the day they occurred, with cached
+  reverse geocoding. Also owns the one-shot full-accuracy fix M5 builds on.
+- **Wizard step 4 ("Signals")** — one signal at a time, each with its own
+  plain-language screen before its system prompt fires, individually
+  skippable; mirrored by four toggles in Settings so any signal can be
+  turned off later without hunting through system Settings.
+
+Not yet built (see Roadmap below): digest generation, CloudKit sync, Live
 Activity, Share Extension, Shortcuts ingestion, Screen Time panel, and the
 alternate app icons. None of these are missing by oversight — the build
-spec explicitly sequences them into M3 through M10.
+spec explicitly sequences them into M4 through M10.
 
 ## Building
 
@@ -125,11 +143,11 @@ guided-entry composition, and tag logging.
   their `sources:` in `project.yml`, so each compiles its own copy. Anything
   app-only (views, notifications, the wizard) or widget-only (the widget
   views/intents) stays in its own target's folder.
-- `Signals/DaySignalProvider.swift` defines the protocol every future
-  background signal (Health, Calendar, Photos, Location, ...) will
-  implement — one provider per `DaySignalKind`, each independently
-  disableable, so a denied permission degrades exactly one signal instead
-  of breaking digest assembly. No concrete providers ship yet (M3).
+- `MyStoryDailyJournalShared/Signals/DaySignalProvider.swift` defines the
+  protocol every signal provider implements — one per `DaySignalKind`, each
+  independently disableable. Concrete providers
+  (`Sources/MyStoryDailyJournal/Signals/`) are app-only, since none of them
+  are needed by the widget extension.
 - `Persistence/DayRecordRepository.swift` is the single idempotent
   find-or-create path for a day's record — the background notification
   delegate, the foreground entry views, and the widget/Siri intents all go
@@ -148,8 +166,6 @@ guided-entry composition, and tag logging.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M3** — Signal providers: HealthKit, Calendar, Photos, Core Location
-  visits, one per PR, each with its own wizard step.
 - **M4** — Rule-based digest composer, midnight background job with
   foreground catch-up, auto-day UI, convert-to-entry flow.
 - **M5** — Full-accuracy location flow, person tagging, attendee

@@ -27,6 +27,13 @@ struct SettingsView: View {
                 )
             }
 
+            Section("Signals") {
+                Toggle("Steps and workouts", isOn: healthBinding)
+                Toggle("Calendar events", isOn: calendarBinding)
+                Toggle("Photos", isOn: photosBinding)
+                Toggle("Places visited", isOn: locationBinding)
+            }
+
             Section("Appearance") {
                 Picker("Palette", selection: $settings.theme) {
                     ForEach(Theme.allCases) { theme in
@@ -70,6 +77,63 @@ struct SettingsView: View {
                 let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
                 settings.reminderMinutesSinceMidnight = (components.hour ?? 21) * 60 + (components.minute ?? 0)
                 NotificationManager.scheduleDailyReminder(settings: settings)
+            }
+        )
+    }
+
+    /// Turning a signal on here requests OS authorization if it hasn't
+    /// been granted yet; turning it off just stops this app from using it
+    /// — the OS grant itself is only revocable from system Settings (§12).
+    private var healthBinding: Binding<Bool> {
+        Binding(
+            get: { settings.healthEnabled },
+            set: { newValue in
+                if newValue {
+                    Task { settings.healthEnabled = await HealthSignalProvider().requestAuthorization() }
+                } else {
+                    settings.healthEnabled = false
+                }
+            }
+        )
+    }
+
+    private var calendarBinding: Binding<Bool> {
+        Binding(
+            get: { settings.calendarEnabled },
+            set: { newValue in
+                if newValue {
+                    Task { settings.calendarEnabled = await CalendarSignalProvider().requestAuthorization() }
+                } else {
+                    settings.calendarEnabled = false
+                }
+            }
+        )
+    }
+
+    private var photosBinding: Binding<Bool> {
+        Binding(
+            get: { settings.photosEnabled },
+            set: { newValue in
+                if newValue {
+                    Task { settings.photosEnabled = await PhotosSignalProvider().requestAuthorization() }
+                } else {
+                    settings.photosEnabled = false
+                }
+            }
+        )
+    }
+
+    private var locationBinding: Binding<Bool> {
+        Binding(
+            get: { settings.locationEnabled },
+            set: { newValue in
+                if newValue {
+                    LocationVisitMonitor.shared.requestAlwaysAuthorization()
+                    settings.locationEnabled = true
+                } else {
+                    LocationVisitMonitor.shared.stopMonitoringVisits()
+                    settings.locationEnabled = false
+                }
             }
         )
     }

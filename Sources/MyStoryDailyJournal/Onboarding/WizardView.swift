@@ -4,13 +4,12 @@ import SwiftUI
 /// wizard can be exited at any point with the app left fully usable on
 /// sensible defaults (freeform, no signals, no lock, ink palette).
 ///
-/// M1 ships steps 1-3 and 6-8 (welcome, writing style, reminder time,
-/// palette, app lock offer, done). Steps 4 (signals) and 5 (automations)
-/// are added alongside their respective providers in M3 and M8 — this
-/// view's step list is intentionally an array so those insert cleanly.
+/// M1 shipped steps 1-3 and 6-8 (welcome, writing style, reminder time,
+/// palette, app lock offer, done). M3 adds step 4 (signals); step 5
+/// (automations) still lands in M8.
 struct WizardView: View {
     private enum Step: Int, CaseIterable {
-        case welcome, writingStyle, reminderTime, palette, appLock, done
+        case welcome, writingStyle, reminderTime, signals, palette, appLock, done
     }
 
     @EnvironmentObject private var settings: SettingsStore
@@ -40,6 +39,8 @@ struct WizardView: View {
                     WritingStyleStep()
                 case .reminderTime:
                     ReminderTimeStep()
+                case .signals:
+                    SignalsStep(onComplete: { move(1) })
                 case .palette:
                     PaletteStep()
                 case .appLock:
@@ -57,7 +58,17 @@ struct WizardView: View {
 
     @ViewBuilder
     private var bottomBar: some View {
-        if step != .done {
+        if step == .signals {
+            // SignalsStep drives its own per-signal Turn On/Not now
+            // navigation; only offer a way to skip the whole step here.
+            HStack {
+                Button("Back") { move(-1) }
+                Spacer()
+                Button("Skip all") { move(1) }
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        } else if step != .done {
             HStack {
                 if step != .welcome {
                     Button("Back") { move(-1) }

@@ -23,6 +23,10 @@ struct MyStoryDailyJournalApp: App {
         notificationDelegate = NotificationDelegate(container: container, settings: settings)
         UNUserNotificationCenter.current().delegate = notificationDelegate
         NotificationManager.registerCategories()
+
+        // Resumes visit monitoring across launches if Always authorization
+        // was already granted; a no-op otherwise (§4).
+        LocationVisitMonitor.shared.startMonitoringVisitsIfAuthorized()
     }
 
     var body: some Scene {
