@@ -32,3 +32,12 @@ struct WeatherPayload: Codable {
     var highTemperatureCelsius: Double?
     var lowTemperatureCelsius: Double?
 }
+
+/// Notes/Messages content pushed in, regardless of which path delivered it
+/// — the Share Extension (M7) or a Shortcuts automation (M8). Storage
+/// shape is identical either way (§10).
+struct SharedItemPayload: Codable {
+    var title: String?
+    var text: String
+    var sourceApp: String?
+}

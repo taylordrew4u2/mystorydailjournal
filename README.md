@@ -5,14 +5,14 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 – M6
+## What's here: M1 – M7
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
 before anything else. M2 (fast capture), M3 (signal providers), M4 (digest
-generation), M5 (precise location + people), and M6 (CloudKit sync)
-followed directly on top.
+generation), M5 (precise location + people), M6 (CloudKit sync), and M7
+(Live Activity, Control Center, Share Extension) followed directly on top.
 
 ### M1 — Core loop
 
@@ -144,10 +144,35 @@ followed directly on top.
   confirmable from the app, which the delete confirmation says plainly
   rather than promising more than it can guarantee.
 
-Not yet built (see Roadmap below): Live Activity, Share Extension,
-Shortcuts ingestion, Screen Time panel, and the alternate app icons. None
-of these are missing by oversight — the build spec explicitly sequences
-them into M7 through M10.
+### M7 — Live Activity, Control Center, Share Extension
+
+- **`JournalLiveActivity`** — Lock Screen and Dynamic Island presence
+  driven by `JournalActivityAttributes.ContentState`, which literally has
+  no field that could carry journal text — "shows the prompt only" (§5)
+  isn't a UI convention here, it's structurally impossible to violate.
+  `LiveActivityManager` refreshes it from every save path in the app
+  (quick reply, freeform, guided, quick capture) and on each foreground;
+  restarted opportunistically rather than on a guaranteed midnight timer,
+  since background execution isn't guaranteed (§3).
+- **`LogEntryControl`** — a Control Center control that opens the app to
+  quick capture. Its `AppIntent` writes to a new shared
+  `PendingActionStore` instead of relying on App Intents' app-opening
+  deep-link mechanics, which are genuinely uncertain enough to flag for
+  verification (§18) — a plain flag plus the scenePhase handling that
+  already runs on every foreground is certain to work.
+  **Version-sensitive** (§18): confirm `ControlWidget`'s current API and
+  its availability inside the same widget extension bundle.
+- **Share Extension** (`MyStoryShareExtension`, a new target) — the
+  dependable push path from any app (§3): pulls shared text/URL from
+  `NSExtensionContext`, shows it in a SwiftUI compose screen, and saves
+  through the new shared `SharedItemIngestor`. Ingested content becomes a
+  `sharedItem` `DaySignal` on today's record rather than overwriting
+  `bodyText` — the same shape M8's Shortcuts pipeline will use, so both
+  paths mean the same thing once they land in the data model.
+
+Not yet built (see Roadmap below): Shortcuts ingestion, Screen Time panel,
+and the alternate app icons. None of these are missing by oversight — the
+build spec explicitly sequences them into M8 through M10.
 
 ## Building
 
@@ -226,7 +251,6 @@ guided-entry composition, and tag logging.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M7** — Live Activity, Control Center control, Share Extension.
 - **M8** — Shared ingestion `AppIntent`, Notes/Message Shortcuts templates,
   watched-folder grant flow.
 - **M9** — App-lock end-to-end confirmation, "Your Data" screen (both

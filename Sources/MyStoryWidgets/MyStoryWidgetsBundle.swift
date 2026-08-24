@@ -6,5 +6,7 @@ struct MyStoryWidgetsBundle: WidgetBundle {
     var body: some Widget {
         QuickTagWidget()
         QuickWriteWidget()
+        JournalLiveActivity()
+        LogEntryControl()
     }
 }

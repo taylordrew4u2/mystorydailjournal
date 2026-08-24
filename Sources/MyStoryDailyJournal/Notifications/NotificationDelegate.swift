@@ -47,5 +47,8 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         let context = ModelContext(container)
         DayRecordRepository.appendQuickReply(textResponse.userText, on: .now, in: context)
         NotificationManager.cancelPendingRemindersForToday()
+        Task { @MainActor in
+            LiveActivityManager.refreshForToday(isJournaled: true)
+        }
     }
 }

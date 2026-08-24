@@ -43,6 +43,7 @@ struct QuickCaptureSheet: View {
     private func save() {
         DayRecordRepository.appendQuickReply(text, on: .now, in: context)
         NotificationManager.cancelPendingRemindersForToday()
+        LiveActivityManager.refreshForToday(isJournaled: true)
         dismiss()
     }
 }

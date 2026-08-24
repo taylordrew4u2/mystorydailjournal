@@ -6,19 +6,26 @@ import SwiftData
 /// entry views go through here, so "find or create today's record" always
 /// behaves the same way.
 enum DayRecordRepository {
-    @discardableResult
-    static func record(for date: Date, in context: ModelContext) -> DayRecord {
+    /// Read-only lookup — never inserts. For callers that just want to
+    /// know whether a day already has a record (e.g. refreshing the Live
+    /// Activity's "journaled" flag) without side-effecting one into
+    /// existence just by asking.
+    static func existingRecord(for date: Date, in context: ModelContext) -> DayRecord? {
         let day = DateUtilities.startOfDay(for: date)
         var descriptor = FetchDescriptor<DayRecord>(
             predicate: #Predicate { $0.date == day }
         )
         descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
 
-        if let existing = try? context.fetch(descriptor).first {
+    @discardableResult
+    static func record(for date: Date, in context: ModelContext) -> DayRecord {
+        if let existing = existingRecord(for: date, in: context) {
             return existing
         }
 
-        let record = DayRecord(date: day, source: .userWritten, bodyText: "")
+        let record = DayRecord(date: DateUtilities.startOfDay(for: date), source: .userWritten, bodyText: "")
         context.insert(record)
         return record
     }

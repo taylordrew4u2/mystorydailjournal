@@ -29,6 +29,8 @@
 		<key>PreciseLocationForEntry</key>
 		<string>My Story uses your exact location, only when you ask, to note precisely where a moment happened.</string>
 	</dict>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.mystorydailyjournal.app.digest-refresh</string>

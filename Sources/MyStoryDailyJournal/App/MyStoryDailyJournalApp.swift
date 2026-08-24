@@ -41,6 +41,16 @@ struct MyStoryDailyJournalApp: App {
         DigestScheduler.runForegroundCatchUp(container: container)
         DigestScheduler.scheduleNextMidnightRun()
         CloudAccountStatus.shared.refresh()
+        Self.refreshLiveActivity(container: container)
+    }
+
+    /// Reads today's actual state before refreshing, rather than guessing —
+    /// the Live Activity's whole point is that its "journaled" flag is
+    /// trustworthy at a glance.
+    private static func refreshLiveActivity(container: ModelContainer) {
+        let context = ModelContext(container)
+        let isJournaled = DayRecordRepository.existingRecord(for: .now, in: context)?.isUserWritten ?? false
+        LiveActivityManager.refreshForToday(isJournaled: isJournaled)
     }
 
     var body: some Scene {
@@ -65,6 +75,10 @@ struct MyStoryDailyJournalApp: App {
                 DigestScheduler.runForegroundCatchUp(container: container)
                 DigestScheduler.scheduleNextMidnightRun()
                 cloudStatus.refresh()
+                Self.refreshLiveActivity(container: container)
+                if PendingActionStore.consumePendingQuickCapture() {
+                    quickCapture.isPresented = true
+                }
             default:
                 break
             }

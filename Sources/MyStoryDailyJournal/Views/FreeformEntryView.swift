@@ -24,6 +24,7 @@ struct FreeformEntryView: View {
                 if !record.bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     NotificationManager.cancelPendingRemindersForToday()
                 }
+                LiveActivityManager.refreshForToday(isJournaled: record.isUserWritten)
             }
     }
 }
