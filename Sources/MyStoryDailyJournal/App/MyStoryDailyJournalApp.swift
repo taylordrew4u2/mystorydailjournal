@@ -27,6 +27,11 @@ struct MyStoryDailyJournalApp: App {
         // Resumes visit monitoring across launches if Always authorization
         // was already granted; a no-op otherwise (§4).
         LocationVisitMonitor.shared.startMonitoringVisitsIfAuthorized()
+
+        // Must register before the app finishes launching (§3: background
+        // execution isn't guaranteed, so this is the "best effort" half —
+        // the foreground catch-up on scenePhase below is the reliable half).
+        DigestScheduler.register(container: container)
     }
 
     var body: some Scene {
@@ -47,6 +52,8 @@ struct MyStoryDailyJournalApp: App {
                 appLock.sceneDidEnterBackground()
             case .active:
                 appLock.sceneDidBecomeActive()
+                DigestScheduler.runForegroundCatchUp(container: container)
+                DigestScheduler.scheduleNextMidnightRun()
             default:
                 break
             }

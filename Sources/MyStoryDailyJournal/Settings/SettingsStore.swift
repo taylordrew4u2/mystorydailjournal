@@ -83,6 +83,19 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(fullAccuracyLocationEnabled, forKey: Keys.fullAccuracyLocation) }
     }
 
+    /// The last day `DigestEngine.catchUpMissingDays` checked through
+    /// (inclusive). `nil` means "never run" — the engine backfills from
+    /// yesterday in that case, not from the beginning of time.
+    @Published var lastDigestCheckDate: Date? {
+        didSet {
+            if let lastDigestCheckDate {
+                defaults.set(lastDigestCheckDate, forKey: Keys.lastDigestCheckDate)
+            } else {
+                defaults.removeObject(forKey: Keys.lastDigestCheckDate)
+            }
+        }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -101,6 +114,7 @@ final class SettingsStore: ObservableObject {
         photosEnabled = defaults.bool(forKey: Keys.photosEnabled)
         locationEnabled = defaults.bool(forKey: Keys.locationEnabled)
         fullAccuracyLocationEnabled = defaults.bool(forKey: Keys.fullAccuracyLocation)
+        lastDigestCheckDate = defaults.object(forKey: Keys.lastDigestCheckDate) as? Date
     }
 
     /// The active question set for guided entries: a starter set, or the
@@ -128,5 +142,6 @@ final class SettingsStore: ObservableObject {
         static let photosEnabled = "settings.photosEnabled"
         static let locationEnabled = "settings.locationEnabled"
         static let fullAccuracyLocation = "settings.fullAccuracyLocationEnabled"
+        static let lastDigestCheckDate = "settings.lastDigestCheckDate"
     }
 }
