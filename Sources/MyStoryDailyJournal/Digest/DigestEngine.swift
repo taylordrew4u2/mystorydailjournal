@@ -4,10 +4,16 @@ import CoreLocation
 
 /// Assembles and saves an auto-generated day (§9). Idempotent: re-running
 /// for the same day finds the same `DayRecord` (via `DayRecordRepository`),
-/// replaces only the signals it itself collects (visits, captured live
-/// elsewhere, are left untouched), and never overwrites a day the user
-/// actually wrote or converted.
+/// replaces only the signals it itself pulls on demand, and never
+/// overwrites a day the user actually wrote or converted.
 enum DigestEngine {
+    /// Kinds this engine doesn't own and must never delete: visits arrive
+    /// live via `LocationVisitMonitor`, shared items via the Share
+    /// Extension or M8's ingestion intent, and watched-folder files via
+    /// `WatchedFolderManager` — all independent write paths this engine
+    /// only reads from when composing text.
+    private static let pushedSignalKinds: Set<DaySignalKind> = [.visit, .sharedItem, .fileWatch]
+
     @discardableResult
     static func generateDigestIfNeeded(for date: Date, in context: ModelContext) async -> DayRecord {
         let day = DateUtilities.dayInterval(containing: date)
@@ -15,10 +21,10 @@ enum DigestEngine {
 
         guard !record.isUserWritten else { return record }
 
-        for signal in record.signals ?? [] where signal.kind != .visit {
+        for signal in record.signals ?? [] where !pushedSignalKinds.contains(signal.kind) {
             context.delete(signal)
         }
-        record.signals?.removeAll { $0.kind != .visit }
+        record.signals?.removeAll { !pushedSignalKinds.contains($0.kind) }
         if record.signals == nil { record.signals = [] }
 
         var freshSignals: [DaySignal] = []

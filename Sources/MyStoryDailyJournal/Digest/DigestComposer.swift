@@ -26,6 +26,9 @@ enum DigestComposer {
         if let weatherClause = weatherClause(signals) {
             clauses.append(weatherClause)
         }
+        if let fileWatchClause = fileWatchClause(signals) {
+            clauses.append(fileWatchClause)
+        }
 
         guard clauses.count > 1 else {
             return "\(clauses[0]) No signals were available for this day."
@@ -109,5 +112,18 @@ enum DigestComposer {
             return nil
         }
         return weather.conditionDescription + "."
+    }
+
+    /// §14: "Granting a watched folder surfaces new files from that folder
+    /// in the next digest."
+    private static func fileWatchClause(_ signals: [DaySignal]) -> String? {
+        let files = signals
+            .filter { $0.kind == .fileWatch }
+            .compactMap { $0.payload(as: FileWatchPayload.self) }
+        guard !files.isEmpty else { return nil }
+
+        return files.count == 1
+            ? "One new file in \(files[0].folderName)."
+            : "\(files.count) new files in \(files[0].folderName)."
     }
 }

@@ -41,3 +41,10 @@ struct SharedItemPayload: Codable {
     var text: String
     var sourceApp: String?
 }
+
+/// A file noticed in the user's one watched folder (§3, §4). Just a name —
+/// never the file's contents.
+struct FileWatchPayload: Codable {
+    var fileName: String
+    var folderName: String
+}

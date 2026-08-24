@@ -37,6 +37,14 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("Rain"))
     }
 
+    func testComposeIncludesFileWatchClause() {
+        let signal = DaySignal(kind: .fileWatch, timestamp: makeDate())
+        signal.setPayload(FileWatchPayload(fileName: "notes.txt", folderName: "Journal"))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("One new file in Journal"))
+    }
+
     func testComposeOmitsClausesForMissingSignalKinds() {
         let signal = DaySignal(kind: .calendar, timestamp: makeDate())
         signal.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: []))

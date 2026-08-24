@@ -1,8 +1,10 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
     @Environment(\.modelContext) private var context
+    @StateObject private var watchedFolder = WatchedFolderManager.shared
 
     private struct ExportFile: Identifiable {
         let url: URL
@@ -13,6 +15,7 @@ struct SettingsView: View {
     @State private var exportError: String?
     @State private var isConfirmingDelete = false
     @State private var deleteError: String?
+    @State private var isChoosingFolder = false
 
     var body: some View {
         Form {
@@ -77,6 +80,22 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Watched Folder") {
+                if let folderName = watchedFolder.folderDisplayName {
+                    LabeledContent("Watching", value: folderName)
+                    Button("Stop Watching", role: .destructive) {
+                        watchedFolder.stopWatching()
+                    }
+                } else {
+                    Text("Grant one folder — iCloud Drive, a project folder, wherever you keep files — and new files there show up in your daily digest.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Button("Choose Folder") {
+                        isChoosingFolder = true
+                    }
+                }
+            }
+
             Section("Your Data") {
                 ForEach(DataExporter.Format.allCases) { format in
                     Button("Export as \(format.rawValue)") {
@@ -99,6 +118,11 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .fileImporter(isPresented: $isChoosingFolder, allowedContentTypes: [.folder]) { result in
+            if case .success(let url) = result {
+                watchedFolder.grantAccess(to: url)
+            }
+        }
         .sheet(item: $exportFile) { file in
             ShareLink(item: file.url) {
                 Label("Share export", systemImage: "square.and.arrow.up")

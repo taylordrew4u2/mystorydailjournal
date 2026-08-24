@@ -38,6 +38,7 @@ enum DigestScheduler {
         Task {
             let context = ModelContext(container)
             await DigestEngine.catchUpMissingDays(in: context)
+            await WatchedFolderManager.shared.checkForNewFiles(in: context)
         }
     }
 
@@ -47,6 +48,7 @@ enum DigestScheduler {
         let work = Task {
             let context = ModelContext(container)
             await DigestEngine.catchUpMissingDays(in: context)
+            await WatchedFolderManager.shared.checkForNewFiles(in: context)
             task.setTaskCompleted(success: true)
         }
 

@@ -5,14 +5,15 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 – M7
+## What's here: M1 – M8
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
 before anything else. M2 (fast capture), M3 (signal providers), M4 (digest
-generation), M5 (precise location + people), M6 (CloudKit sync), and M7
-(Live Activity, Control Center, Share Extension) followed directly on top.
+generation), M5 (precise location + people), M6 (CloudKit sync), M7 (Live
+Activity, Control Center, Share Extension), and M8 (automated ingestion)
+followed directly on top.
 
 ### M1 — Core loop
 
@@ -170,9 +171,35 @@ generation), M5 (precise location + people), M6 (CloudKit sync), and M7
   `bodyText` — the same shape M8's Shortcuts pipeline will use, so both
   paths mean the same thing once they land in the data model.
 
-Not yet built (see Roadmap below): Shortcuts ingestion, Screen Time panel,
-and the alternate app icons. None of these are missing by oversight — the
-build spec explicitly sequences them into M8 through M10.
+### M8 — Automated ingestion
+
+- **`IngestSharedContentIntent`** — the one endpoint both Shortcuts
+  pipelines hand off to, sharing `SharedItemIngestor` with the Share
+  Extension so a note pulled automatically and one forwarded by hand land
+  identically. `openAppWhenRun = false`, so a Shortcut using it completes
+  with no app switch.
+- **`ShortcutTemplate` + the wizard's Automations step** — offered, but
+  deliberately secondary, per §7. Honest about a real constraint: a
+  `.shortcut` file is a signed binary plist built inside the Shortcuts app
+  itself, not something this codebase can author as source. Until a real
+  exported one is hosted and wired in, the "Install automation" buttons
+  open the Shortcuts app directly and the UI spells out the handful of
+  actions to add by hand — a working, if less polished, path rather than
+  a placeholder that does nothing.
+- **`WatchedFolderManager`** — the Files substitute from §3: one
+  `.fileImporter`-granted folder, a security-scoped bookmark, and a
+  content diff on every foreground/midnight check that records new file
+  names as `fileWatch` signals — which now also show up in the digest
+  text, per §14's acceptance criteria.
+- Fixed a real bug caught while wiring this up: `DigestEngine`'s
+  regeneration was deleting every non-visit signal on each run, which
+  would have silently wiped out shared items and watched-folder files
+  pushed in by these independent paths. It now only clears signals it
+  collects itself.
+
+Not yet built (see Roadmap below): the Screen Time panel and the alternate
+app icons/trust items. None of these are missing by oversight — the build
+spec explicitly sequences them into M9 and M10.
 
 ## Building
 
@@ -251,8 +278,6 @@ guided-entry composition, and tag logging.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M8** — Shared ingestion `AppIntent`, Notes/Message Shortcuts templates,
-  watched-folder grant flow.
 - **M9** — App-lock end-to-end confirmation, "Your Data" screen (both
   already present in M1), alternate app icons, App Privacy questionnaire.
 - **M10** — Family Controls entitlement + `DeviceActivityReport`,

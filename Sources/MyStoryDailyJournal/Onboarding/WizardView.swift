@@ -5,11 +5,11 @@ import SwiftUI
 /// sensible defaults (freeform, no signals, no lock, ink palette).
 ///
 /// M1 shipped steps 1-3 and 6-8 (welcome, writing style, reminder time,
-/// palette, app lock offer, done). M3 adds step 4 (signals); step 5
-/// (automations) still lands in M8.
+/// palette, app lock offer, done). M3 added step 4 (signals); M8 adds
+/// step 5 (automations) — completing the full step list from §7.
 struct WizardView: View {
     private enum Step: Int, CaseIterable {
-        case welcome, writingStyle, reminderTime, signals, palette, appLock, done
+        case welcome, writingStyle, reminderTime, signals, automations, palette, appLock, done
     }
 
     @EnvironmentObject private var settings: SettingsStore
@@ -41,6 +41,8 @@ struct WizardView: View {
                     ReminderTimeStep()
                 case .signals:
                     SignalsStep(onComplete: { move(1) })
+                case .automations:
+                    AutomationsStep()
                 case .palette:
                     PaletteStep()
                 case .appLock:
