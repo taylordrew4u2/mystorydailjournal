@@ -31,6 +31,15 @@
 	</dict>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>When you turn on nearby-people suggestions, My Story looks for other nearby phones running My Story to suggest tagging.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_mystory-nb._tcp</string>
+		<string>_mystory-nb._udp</string>
+	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>When you turn on nearby-people suggestions, My Story uses Bluetooth to find other nearby phones running My Story.</string>
 	<key>CFBundleIcons</key>
 	<dict>
 		<key>CFBundlePrimaryIcon</key>

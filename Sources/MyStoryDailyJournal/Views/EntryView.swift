@@ -53,6 +53,11 @@ struct EntryView: View {
             PersonChipsSection(record: record)
                 .padding(.top, 8)
 
+            if DateUtilities.startOfDay(for: date) == DateUtilities.startOfDay(for: .now) {
+                ScreenTimePanel()
+                    .padding(.top, 8)
+            }
+
             if mode != nil {
                 Picker("Mode", selection: modeBinding) {
                     Text("Freeform").tag(WritingStyle.freeform)

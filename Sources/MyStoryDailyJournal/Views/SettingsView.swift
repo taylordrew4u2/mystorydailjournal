@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
     @Environment(\.modelContext) private var context
     @StateObject private var watchedFolder = WatchedFolderManager.shared
+    @StateObject private var nearbyPeople = NearbyPeopleService.shared
 
     private struct ExportFile: Identifiable {
         let url: URL
@@ -64,6 +65,22 @@ struct SettingsView: View {
                         Text(theme.displayName).tag(theme)
                     }
                 }
+            }
+
+            Section("Experimental") {
+                Toggle("Rewrite digests in a natural voice", isOn: $settings.digestRewriteEnabled)
+                Text("Uses the on-device language model, when available, to smooth out the rule-based digest. Off by default; the plain version is always the fallback.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Toggle("Suggest nearby people", isOn: nearbyPeopleBinding)
+                if settings.nearbyPeopleEnabled {
+                    TextField("Your name", text: nameBinding)
+                        .textFieldStyle(.roundedBorder)
+                }
+                Text("When on, this phone and a friend's can trade a local handshake to suggest tagging each other — only when they're also running My Story nearby.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Privacy") {
@@ -238,6 +255,34 @@ struct SettingsView: View {
                     LocationVisitMonitor.shared.requestTemporaryFullAccuracy(
                         purposeKey: LocationVisitMonitor.fullAccuracyPurposeKey
                     )
+                }
+            }
+        )
+    }
+
+    /// §13 M10, off by default: starts/stops the local handshake the
+    /// instant the toggle changes, using whatever name is already saved.
+    private var nearbyPeopleBinding: Binding<Bool> {
+        Binding(
+            get: { settings.nearbyPeopleEnabled },
+            set: { newValue in
+                settings.nearbyPeopleEnabled = newValue
+                if newValue, !settings.myDisplayName.isEmpty {
+                    nearbyPeople.start(displayName: settings.myDisplayName)
+                } else {
+                    nearbyPeople.stop()
+                }
+            }
+        )
+    }
+
+    private var nameBinding: Binding<String> {
+        Binding(
+            get: { settings.myDisplayName },
+            set: { newValue in
+                settings.myDisplayName = newValue
+                if settings.nearbyPeopleEnabled, !newValue.isEmpty {
+                    nearbyPeople.start(displayName: newValue)
                 }
             }
         )

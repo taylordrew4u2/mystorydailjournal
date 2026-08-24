@@ -8,7 +8,9 @@ import SwiftData
 struct PersonChipsSection: View {
     let record: DayRecord
 
+    @EnvironmentObject private var settings: SettingsStore
     @Environment(\.modelContext) private var context
+    @StateObject private var nearbyPeople = NearbyPeopleService.shared
     @State private var newName = ""
     @State private var isAddingPerson = false
 
@@ -28,6 +30,11 @@ struct PersonChipsSection: View {
             .compactMap { $0.payload(as: CalendarPayload.self) }
             .flatMap(\.attendeeNames)
         return Array(Set(names)).filter { !taggedNames.contains($0.lowercased()) }.sorted()
+    }
+
+    private var nearbySuggestions: [String] {
+        let taggedNames = Set(taggedPeople.map { $0.name.lowercased() })
+        return nearbyPeople.nearbySuggestions.filter { !taggedNames.contains($0.lowercased()) }
     }
 
     var body: some View {
@@ -55,6 +62,16 @@ struct PersonChipsSection: View {
                     Chip(label: name, isFilled: false, isSuggestion: true) {
                         let person = PeopleRepository.findOrCreatePerson(named: name, in: context)
                         PeopleRepository.toggle(person, on: record, in: context)
+                    }
+                })
+            }
+
+            if settings.nearbyPeopleEnabled, !nearbySuggestions.isEmpty {
+                row(title: "Nearby", chips: nearbySuggestions.map { name in
+                    Chip(label: name, isFilled: false, isSuggestion: true) {
+                        let person = PeopleRepository.findOrCreatePerson(named: name, in: context)
+                        PeopleRepository.toggle(person, on: record, in: context)
+                        nearbyPeople.dismissSuggestion(name)
                     }
                 })
             }

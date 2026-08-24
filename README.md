@@ -3,18 +3,25 @@
 A native iOS journaling app that guarantees every day has a record. Full
 product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
-next.
+left.
 
-## What's here: M1 – M9
+**Built without a Mac or Xcode.** Every line here was written and
+reviewed by hand — file structure, API shapes, entitlements — without a
+compiler to check it against. That's fine for most of this codebase, but
+a handful of newer or sparsely documented frameworks (see "What's left"
+below) need real verification on a Mac before they can be trusted as-is.
+
+## What's here: the full build spec, M1 – M10
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
 before anything else. M2 (fast capture), M3 (signal providers), M4 (digest
 generation), M5 (precise location + people), M6 (CloudKit sync), M7 (Live
-Activity, Control Center, Share Extension), M8 (automated ingestion), and
-M9 (lock/trust confirmation, alternate icons, privacy) followed directly
-on top.
+Activity, Control Center, Share Extension), M8 (automated ingestion), M9
+(lock/trust confirmation, alternate icons, privacy), and M10 (Screen Time,
+on-device digest rewrite, nearby people) followed directly on top — every
+milestone the build spec describes, including the one it labels deferred.
 
 ### M1 — Core loop
 
@@ -220,10 +227,38 @@ on top.
   Collected" is the accurate (not just favorable) declaration for each,
   per §12's own reasoning.
 
-Not yet built (see Roadmap below): the Screen Time panel, the optional
-on-device digest rewrite, and the optional nearby-people handshake. None
-of these are missing by oversight — the build spec explicitly sequences
-them into M10, which it calls out as deferred.
+### M10 — Screen Time, on-device digest rewrite, nearby people (deferred)
+
+The build spec itself labels this milestone deferred — built last, and
+each piece more speculative than the last:
+
+- **`MyStoryScreenTime`** (a new `DeviceActivityReport` extension target)
+  + `ScreenTimePanel`, embedded in today's entry only. This is the
+  permanent architecture, not a stand-in for a future export API: the
+  report extension's sandbox is deliberately read-only by Apple's own
+  design, so no number from it can reach `bodyText` or any stored
+  `DaySignal` — structurally, not just by convention.
+  **Version-sensitive** (§18): `DeviceActivityReportScene`'s exact shape
+  and `DeviceActivityFilter`'s initializer are sparsely documented and
+  have moved across releases — confirm both this and the extension
+  against the actual SDK before shipping.
+- **`DigestRewriter`** — an optional, off-by-default on-device rewrite of
+  the rule-based digest via the Foundation Models framework, wrapped in
+  `#if canImport(FoundationModels)` and falling back to the plain
+  rule-based text on any failure — unavailable model, thrown error, empty
+  response. **Best-effort and version-sensitive** (§18): this framework
+  is new enough that its exact API needs confirming, and its hardware/OS
+  availability is narrow.
+- **`NearbyPeopleService`** — the optional Bluetooth/local-network
+  handshake via `MultipeerConnectivity`, off by default. Deliberately
+  never establishes an `MCSession`: the browser side's
+  `foundPeer(_:withDiscoveryInfo:)` callback alone is enough to surface a
+  name suggestion, so the feature never asks for more than the Local
+  Network prompt discovery itself requires.
+
+None of M10 is missing by oversight — the build spec explicitly sequences
+it last and calls it out as deferred, which this follows literally: it's
+the final milestone, built after everything else was solid.
 
 ## Building
 
@@ -300,8 +335,29 @@ guided-entry composition, and tag logging.
   deliberately separate from the CloudKit-synced `DayRecord` store per the
   build spec's data-model split.
 
-## Roadmap (per the build spec's milestones)
+## What's left
 
-- **M10** — Family Controls entitlement + `DeviceActivityReport`,
-  optional on-device digest rewrite, optional nearby-people Bluetooth
-  handshake.
+Every milestone in the build spec (M1 through M10) has a first pass in
+this repository. What's left is what no amount of code alone can finish:
+
+- **Design polish** — the app icon set is a functional placeholder (§17
+  says as much explicitly); a hand-finished pass per palette preset is
+  real design work for a person to do.
+- **Version verification** (§18) — several features here were built
+  against APIs that are new, sparsely documented, or have moved across
+  iOS releases: SwiftData's CloudKit integration, `ControlWidget`,
+  `DeviceActivityReport`/`DeviceActivityFilter`, the Foundation Models
+  framework, and `Find Notes`/`Open Note`'s per-release Shortcuts
+  reliability. Each is flagged in its own file's doc comment; all of them
+  need confirming against the actual SDK before this ships.
+- **Real `.shortcut` files** — M8's automation templates currently open
+  the Shortcuts app with manual setup steps spelled out, since a
+  `.shortcut` is a signed binary built inside the Shortcuts app itself,
+  not something authorable as source in this repository.
+- **App Store Connect setup** — provisioning the App Group, iCloud
+  container, HealthKit/WeatherKit/Family Controls entitlements, and
+  Sign in with Apple-free account flow under a real team, plus the actual
+  App Privacy questionnaire submission `PRIVACY.md` documents.
+- **On-device testing** — everything here was written and reviewed
+  without access to Xcode or an Apple toolchain; see the note at the top
+  of this README.

@@ -29,6 +29,12 @@ struct MyStoryDailyJournalApp: App {
         // was already granted; a no-op otherwise (§4).
         LocationVisitMonitor.shared.startMonitoringVisitsIfAuthorized()
 
+        // Resumes the optional nearby-people handshake across launches if
+        // it was already turned on; a no-op otherwise (§13 M10).
+        if settings.nearbyPeopleEnabled, !settings.myDisplayName.isEmpty {
+            NearbyPeopleService.shared.start(displayName: settings.myDisplayName)
+        }
+
         // Must register before the app finishes launching (§3: background
         // execution isn't guaranteed, so this is the "best effort" half —
         // the foreground catch-up below is the reliable half).

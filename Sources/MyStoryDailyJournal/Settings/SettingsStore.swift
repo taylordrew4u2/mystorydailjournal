@@ -106,6 +106,26 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    /// §9, §13 M10: optional on-device rewrite of the digest into a more
+    /// natural voice. Default off — the rule-based composer stays the
+    /// fallback regardless.
+    @Published var digestRewriteEnabled: Bool {
+        didSet { defaults.set(digestRewriteEnabled, forKey: Keys.digestRewriteEnabled) }
+    }
+
+    /// §13 M10: opt-in, Bluetooth-range nearby-person suggestions. Off by
+    /// default and does nothing until explicitly turned on (§12).
+    @Published var nearbyPeopleEnabled: Bool {
+        didSet { defaults.set(nearbyPeopleEnabled, forKey: Keys.nearbyPeopleEnabled) }
+    }
+
+    /// What this device broadcasts to nearby instances of the app when
+    /// `nearbyPeopleEnabled` is on — never anything beyond what the user
+    /// types here themselves.
+    @Published var myDisplayName: String {
+        didSet { defaults.set(myDisplayName, forKey: Keys.myDisplayName) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -125,6 +145,9 @@ final class SettingsStore: ObservableObject {
         locationEnabled = defaults.bool(forKey: Keys.locationEnabled)
         fullAccuracyLocationEnabled = defaults.bool(forKey: Keys.fullAccuracyLocation)
         lastDigestCheckDate = defaults.object(forKey: Keys.lastDigestCheckDate) as? Date
+        digestRewriteEnabled = defaults.bool(forKey: Keys.digestRewriteEnabled)
+        nearbyPeopleEnabled = defaults.bool(forKey: Keys.nearbyPeopleEnabled)
+        myDisplayName = defaults.string(forKey: Keys.myDisplayName) ?? ""
     }
 
     /// The active question set for guided entries: a starter set, or the
@@ -153,5 +176,8 @@ final class SettingsStore: ObservableObject {
         static let locationEnabled = "settings.locationEnabled"
         static let fullAccuracyLocation = "settings.fullAccuracyLocationEnabled"
         static let lastDigestCheckDate = "settings.lastDigestCheckDate"
+        static let digestRewriteEnabled = "settings.digestRewriteEnabled"
+        static let nearbyPeopleEnabled = "settings.nearbyPeopleEnabled"
+        static let myDisplayName = "settings.myDisplayName"
     }
 }
