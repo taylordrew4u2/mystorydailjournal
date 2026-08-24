@@ -1,0 +1,50 @@
+name: MyStoryDailyJournal
+options:
+  bundleIdPrefix: com.mystorydailyjournal
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: "1"
+    ITSAppUsesNonExemptEncryption: false
+
+targets:
+  MyStoryDailyJournal:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources/MyStoryDailyJournal
+    info:
+      path: Sources/MyStoryDailyJournal/Support/Info.plist
+    entitlements:
+      path: Sources/MyStoryDailyJournal/Support/MyStoryDailyJournal.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mystorydailyjournal.app
+        PRODUCT_NAME: My Story
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: false
+        DEVELOPMENT_ASSET_PATHS: ""
+    scheme:
+      testTargets:
+        - MyStoryDailyJournalTests
+      gatherCoverageData: true
+
+  MyStoryDailyJournalTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Tests/MyStoryDailyJournalTests
+    dependencies:
+      - target: MyStoryDailyJournal
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mystorydailyjournal.app.tests
+        GENERATE_INFOPLIST_FILE: true

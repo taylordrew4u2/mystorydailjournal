@@ -1,0 +1,108 @@
+import SwiftUI
+import SwiftData
+
+/// The full entry experience for one day (§6). Freeform and guided are
+/// always both available and switchable, regardless of the wizard's default.
+struct EntryView: View {
+    let date: Date
+
+    @EnvironmentObject private var settings: SettingsStore
+    @Environment(\.modelContext) private var context
+
+    @State private var record: DayRecord?
+    @State private var mode: WritingStyle?
+    @State private var pendingModeSwitchAlert = false
+    @State private var candidateMode: WritingStyle?
+
+    var body: some View {
+        Group {
+            if let record {
+                content(for: record)
+            } else {
+                ProgressView()
+            }
+        }
+        .navigationTitle(date, format: .dateTime.month(.wide).day().year())
+        .navigationBarTitleDisplayMode(.inline)
+        .task { loadRecord() }
+    }
+
+    @ViewBuilder
+    private func content(for record: DayRecord) -> some View {
+        VStack(spacing: 0) {
+            if mode != nil {
+                Picker("Mode", selection: modeBinding) {
+                    Text("Freeform").tag(WritingStyle.freeform)
+                    Text("Guided").tag(WritingStyle.guided)
+                }
+                .pickerStyle(.segmented)
+                .padding()
+            }
+
+            if mode == .guided {
+                GuidedEntryView(record: record, questionSet: settings.activeQuestionSet) {
+                    NotificationManager.cancelPendingRemindersForToday()
+                }
+            } else if mode == .freeform {
+                FreeformEntryView(record: record)
+            } else {
+                ModeChooserView { chosen in
+                    mode = chosen
+                }
+            }
+        }
+        .alert("Replace your writing?", isPresented: $pendingModeSwitchAlert) {
+            Button("Cancel", role: .cancel) { candidateMode = nil }
+            Button("Replace", role: .destructive) {
+                if let candidateMode {
+                    mode = candidateMode
+                }
+                candidateMode = nil
+            }
+        } message: {
+            Text("Switching to Guided will replace this day's text once you finish the prompts.")
+        }
+    }
+
+    private var modeBinding: Binding<WritingStyle> {
+        Binding(
+            get: { mode ?? .freeform },
+            set: { newValue in
+                guard let record, newValue == .guided, !record.bodyText.isEmpty, mode != .guided else {
+                    mode = newValue
+                    return
+                }
+                candidateMode = newValue
+                pendingModeSwitchAlert = true
+            }
+        )
+    }
+
+    private func loadRecord() {
+        guard record == nil else { return }
+        let loaded = DayRecordRepository.record(for: date, in: context)
+        record = loaded
+        if !loaded.bodyText.isEmpty {
+            mode = .freeform
+        } else if settings.writingStyle != .askEachTime {
+            mode = settings.writingStyle
+        }
+    }
+}
+
+private struct ModeChooserView: View {
+    let onChoose: (WritingStyle) -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("How do you want to write today?")
+                .font(.title3)
+            Button("Freeform") { onChoose(.freeform) }
+                .buttonStyle(.borderedProminent)
+            Button("Guided") { onChoose(.guided) }
+                .buttonStyle(.bordered)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
