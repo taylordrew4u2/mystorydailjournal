@@ -5,13 +5,14 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 – M5
+## What's here: M1 – M6
 
 Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
 before anything else. M2 (fast capture), M3 (signal providers), M4 (digest
-generation), and M5 (precise location + people) followed directly on top.
+generation), M5 (precise location + people), and M6 (CloudKit sync)
+followed directly on top.
 
 ### M1 — Core loop
 
@@ -121,10 +122,32 @@ generation), and M5 (precise location + people) followed directly on top.
   tapping one is what turns it into a real, confirmed `Person` tag — it's
   never written as fact on its own.
 
-Not yet built (see Roadmap below): CloudKit sync, Live Activity, Share
-Extension, Shortcuts ingestion, Screen Time panel, and the alternate app
-icons. None of these are missing by oversight — the build spec explicitly
-sequences them into M6 through M10.
+### M6 — CloudKit sync
+
+- **`PersistenceController`** now configures its `ModelConfiguration` with
+  `cloudKitDatabase: .private("iCloud.com.mystorydailyjournal.app")` — the
+  same one line the M1 comment promised, made possible because every model
+  was already written CloudKit-safe (optional/defaulted fields, no
+  schema-level unique constraints).
+  **Version-sensitive** (§18): confirm SwiftData's current CloudKit
+  constraint/relationship support, and that one on-disk store safely
+  serves both the CloudKit-configured app and the widget extension, before
+  shipping this as-is.
+- **`CloudAccountStatus`** watches `CKContainer.accountStatus()` and
+  **`CloudStatusBanner`** shows a plain-language, non-blocking notice when
+  iCloud is signed out or unreachable — the app is fully usable either way
+  (§11: sync is additive, never blocking).
+- **`DataExporter`** — Markdown and JSON export via `ShareLink`, and a
+  destructive "Delete All Data" action. Because the store is CloudKit-
+  backed, a local delete syncs as a tombstone to the private database the
+  same way any other change does; that sync isn't independently
+  confirmable from the app, which the delete confirmation says plainly
+  rather than promising more than it can guarantee.
+
+Not yet built (see Roadmap below): Live Activity, Share Extension,
+Shortcuts ingestion, Screen Time panel, and the alternate app icons. None
+of these are missing by oversight — the build spec explicitly sequences
+them into M7 through M10.
 
 ## Building
 
@@ -203,8 +226,6 @@ guided-entry composition, and tag logging.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M6** — CloudKit sync via SwiftData, account-status handling,
-  offline-first verification.
 - **M7** — Live Activity, Control Center control, Share Extension.
 - **M8** — Shared ingestion `AppIntent`, Notes/Message Shortcuts templates,
   watched-folder grant flow.

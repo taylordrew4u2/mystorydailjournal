@@ -16,6 +16,8 @@ struct RootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
+                CloudStatusBanner()
+
                 Picker("View", selection: $layout) {
                     ForEach(Layout.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }

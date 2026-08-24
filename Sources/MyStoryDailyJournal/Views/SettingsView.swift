@@ -2,6 +2,17 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
+    @Environment(\.modelContext) private var context
+
+    private struct ExportFile: Identifiable {
+        let url: URL
+        var id: URL { url }
+    }
+
+    @State private var exportFile: ExportFile?
+    @State private var exportError: String?
+    @State private var isConfirmingDelete = false
+    @State private var deleteError: String?
 
     var body: some View {
         Form {
@@ -66,6 +77,21 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Your Data") {
+                ForEach(DataExporter.Format.allCases) { format in
+                    Button("Export as \(format.rawValue)") {
+                        do {
+                            exportFile = ExportFile(url: try DataExporter.export(format: format, from: context))
+                        } catch {
+                            exportError = "Couldn't export your journal. Try again."
+                        }
+                    }
+                }
+                Button("Delete All Data", role: .destructive) {
+                    isConfirmingDelete = true
+                }
+            }
+
             Section {
                 Button("Redo setup") {
                     settings.wizardCompleted = false
@@ -73,6 +99,35 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .sheet(item: $exportFile) { file in
+            ShareLink(item: file.url) {
+                Label("Share export", systemImage: "square.and.arrow.up")
+            }
+            .padding()
+            .presentationDetents([.medium])
+        }
+        .alert("Couldn't export", isPresented: Binding(get: { exportError != nil }, set: { _ in exportError = nil })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
+        .alert("Delete everything?", isPresented: $isConfirmingDelete) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete All Data", role: .destructive) {
+                do {
+                    try DataExporter.deleteAllData(in: context)
+                } catch {
+                    deleteError = "Some data couldn't be deleted. Try again."
+                }
+            }
+        } message: {
+            Text("This deletes every entry on this device and, once it syncs, from your private iCloud database. This can't be undone.")
+        }
+        .alert("Couldn't delete", isPresented: Binding(get: { deleteError != nil }, set: { _ in deleteError = nil })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "")
+        }
     }
 
     private var reminderTimeBinding: Binding<Date> {

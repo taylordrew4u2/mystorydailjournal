@@ -8,6 +8,7 @@ struct MyStoryDailyJournalApp: App {
     @StateObject private var settings: SettingsStore
     @StateObject private var appLock: AppLockManager
     @StateObject private var quickCapture = QuickCaptureCoordinator()
+    @StateObject private var cloudStatus = CloudAccountStatus.shared
     private let notificationDelegate: NotificationDelegate
 
     @Environment(\.scenePhase) private var scenePhase
@@ -30,8 +31,16 @@ struct MyStoryDailyJournalApp: App {
 
         // Must register before the app finishes launching (§3: background
         // execution isn't guaranteed, so this is the "best effort" half —
-        // the foreground catch-up on scenePhase below is the reliable half).
+        // the foreground catch-up below is the reliable half).
         DigestScheduler.register(container: container)
+
+        // `onChange(of: scenePhase)` below doesn't fire for the very first
+        // transition into `.active` on a cold launch, so these also need
+        // to run here — the scenePhase handler covers every foreground
+        // after that.
+        DigestScheduler.runForegroundCatchUp(container: container)
+        DigestScheduler.scheduleNextMidnightRun()
+        CloudAccountStatus.shared.refresh()
     }
 
     var body: some Scene {
@@ -40,6 +49,7 @@ struct MyStoryDailyJournalApp: App {
                 .environmentObject(settings)
                 .environmentObject(appLock)
                 .environmentObject(quickCapture)
+                .environmentObject(cloudStatus)
                 .tint(settings.theme.accent)
                 .onOpenURL { url in
                     quickCapture.handle(url: url)
@@ -54,6 +64,7 @@ struct MyStoryDailyJournalApp: App {
                 appLock.sceneDidBecomeActive()
                 DigestScheduler.runForegroundCatchUp(container: container)
                 DigestScheduler.scheduleNextMidnightRun()
+                cloudStatus.refresh()
             default:
                 break
             }
