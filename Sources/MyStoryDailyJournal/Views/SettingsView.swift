@@ -46,6 +46,7 @@ struct SettingsView: View {
                 Toggle("Steps and workouts", isOn: healthBinding)
                 Toggle("Calendar events", isOn: calendarBinding)
                 Toggle("Photos", isOn: photosBinding)
+                Toggle("Music", isOn: mediaBinding)
                 Toggle("Places visited", isOn: locationBinding)
                 if settings.locationEnabled {
                     Toggle("Precise location", isOn: fullAccuracyBinding)
@@ -224,6 +225,19 @@ struct SettingsView: View {
                     Task { settings.photosEnabled = await PhotosSignalProvider().requestAuthorization() }
                 } else {
                     settings.photosEnabled = false
+                }
+            }
+        )
+    }
+
+    private var mediaBinding: Binding<Bool> {
+        Binding(
+            get: { settings.mediaEnabled },
+            set: { newValue in
+                if newValue {
+                    Task { settings.mediaEnabled = await MediaSignalProvider().requestAuthorization() }
+                } else {
+                    settings.mediaEnabled = false
                 }
             }
         )

@@ -8,6 +8,7 @@ enum DaySignalKind: String, Codable, Sendable {
     case photo
     case calendar
     case activity
+    case media
     case weather
     case sharedItem
     case screenTime

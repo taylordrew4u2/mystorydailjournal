@@ -47,6 +47,9 @@ struct EntryView: View {
                     .padding(.top, 8)
             }
 
+            DayMetadataStrip(record: record)
+                .padding(.top, 8)
+
             TagChipRow(date: date)
                 .padding(.top, 12)
 

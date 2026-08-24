@@ -27,4 +27,23 @@ final class DateUtilitiesTests: XCTestCase {
         let interval = DateUtilities.dayInterval(containing: Date(), calendar: calendar)
         XCTAssertEqual(interval.duration, 24 * 60 * 60, accuracy: 1)
     }
+
+    func testStartOfDayWithExplicitTimeZoneIgnoresDeviceTimeZone() {
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 6
+        components.day = 15
+        components.hour = 2 // 2am UTC — still "yesterday" in Etc/GMT+8
+        let instant = utcCalendar.date(from: components)!
+
+        let startInFixedZone = DateUtilities.startOfDay(for: instant, timeZoneIdentifier: "Etc/GMT+8")
+        var fixedCalendar = Calendar(identifier: .gregorian)
+        fixedCalendar.timeZone = TimeZone(identifier: "Etc/GMT+8")!
+        let day = fixedCalendar.component(.day, from: startInFixedZone)
+
+        XCTAssertEqual(day, 14, "2am UTC on the 15th is still the 14th in a UTC-8 zone.")
+    }
 }

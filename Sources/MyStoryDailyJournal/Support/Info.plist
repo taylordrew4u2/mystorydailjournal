@@ -18,6 +18,12 @@
 	<string>My Story reads your steps, distance, and workouts to fill in a quiet day's digest when you don't write one yourself.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
+	<!-- Fallback for the pre-iOS-17 EventKit authorization path; iOS 17+ reads
+	     NSCalendarsFullAccessUsageDescription above instead. -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>My Story checks what you listened to that day to fill in a quiet day's digest when you don't write one yourself.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>My Story counts the photos you took each day to fill in a digest — it never reads or uploads the photos themselves.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

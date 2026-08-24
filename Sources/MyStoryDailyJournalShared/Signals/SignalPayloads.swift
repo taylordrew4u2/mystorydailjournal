@@ -25,6 +25,11 @@ struct ActivityPayload: Codable {
     var stepCount: Int
     var distanceMeters: Double
     var workoutSummaries: [String]
+    var sleepHours: Double = 0
+}
+
+struct MediaPayload: Codable {
+    var titles: [String]
 }
 
 struct WeatherPayload: Codable {

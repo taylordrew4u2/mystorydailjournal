@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	§12: no analytics SDK, no ad network, no third-party data collection —
+	everything in this app stays in the user's own App Group container and,
+	when they enable it, their own private CloudKit database. Nothing here
+	is "collected" in the App Store's sense because nothing leaves the
+	device/account boundary the user controls.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!--
+			SettingsStore, PendingActionStore, and WatchedFolderManager all
+			read/write UserDefaults(suiteName:) against the shared App Group
+			so app and extensions see the same settings/bookmarks — never a
+			third party's defaults, and nothing written is used to
+			fingerprint the device.
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

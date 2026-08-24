@@ -13,6 +13,14 @@ import SwiftData
 ///
 /// Reverse geocoding is cached by a coarse coordinate key so revisiting the
 /// same place repeatedly doesn't repeatedly hit `CLGeocoder`.
+///
+/// **Version-sensitive** (§18): `fullAccuracyPurposeKey`'s wording and its
+/// posture toward App Review — Always authorization plus a temporary
+/// full-accuracy request is an unusually strong ask, and Apple's guidance
+/// on justifying it (and the exact
+/// `NSLocationTemporaryUsageDescriptionDictionary` mechanics) has shifted
+/// across releases — confirm both against current App Review guidelines
+/// before shipping.
 @MainActor
 final class LocationVisitMonitor: NSObject, CLLocationManagerDelegate, ObservableObject {
     static let shared = LocationVisitMonitor()

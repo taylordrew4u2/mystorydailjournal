@@ -19,7 +19,11 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: Sources/MyStoryDailyJournal
+        excludes:
+          - "Support/PrivacyInfo.xcprivacy"
       - path: Sources/MyStoryDailyJournalShared
+    resources:
+      - path: Sources/MyStoryDailyJournal/Support/PrivacyInfo.xcprivacy
     info:
       path: Sources/MyStoryDailyJournal/Support/Info.plist
     entitlements:

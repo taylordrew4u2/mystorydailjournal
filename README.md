@@ -348,9 +348,19 @@ this repository. What's left is what no amount of code alone can finish:
   against APIs that are new, sparsely documented, or have moved across
   iOS releases: SwiftData's CloudKit integration, `ControlWidget`,
   `DeviceActivityReport`/`DeviceActivityFilter`, the Foundation Models
-  framework, and `Find Notes`/`Open Note`'s per-release Shortcuts
-  reliability. Each is flagged in its own file's doc comment; all of them
-  need confirming against the actual SDK before this ships.
+  framework, `Find Notes`/`Open Note`'s per-release Shortcuts reliability
+  (and Shortcuts' own foreground-switch behavior when installing/running
+  an automation), Live Activity's system-enforced maximum duration, the
+  precise-location purpose string's posture toward App Review, the Family
+  Controls entitlement's current distribution-request wording, and
+  MultipeerConnectivity's Local Network prompt/discovery behavior. Each is
+  flagged in its own file's doc comment; all of them need confirming
+  against the actual SDK before this ships. Separately, mapping this
+  app's real data use onto the App Store Connect App Privacy
+  questionnaire's current categories is submission-time work no doc
+  comment can stand in for — `PRIVACY.md` documents the underlying
+  behavior, but the questionnaire itself has to be filled in against
+  whatever categories exist at submission time.
 - **Real `.shortcut` files** — M8's automation templates currently open
   the Shortcuts app with manual setup steps spelled out, since a
   `.shortcut` is a signed binary built inside the Shortcuts app itself,

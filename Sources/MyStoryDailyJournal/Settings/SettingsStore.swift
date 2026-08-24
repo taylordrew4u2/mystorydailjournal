@@ -83,6 +83,10 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(photosEnabled, forKey: Keys.photosEnabled) }
     }
 
+    @Published var mediaEnabled: Bool {
+        didSet { defaults.set(mediaEnabled, forKey: Keys.mediaEnabled) }
+    }
+
     @Published var locationEnabled: Bool {
         didSet { defaults.set(locationEnabled, forKey: Keys.locationEnabled) }
     }
@@ -142,6 +146,7 @@ final class SettingsStore: ObservableObject {
         healthEnabled = defaults.bool(forKey: Keys.healthEnabled)
         calendarEnabled = defaults.bool(forKey: Keys.calendarEnabled)
         photosEnabled = defaults.bool(forKey: Keys.photosEnabled)
+        mediaEnabled = defaults.bool(forKey: Keys.mediaEnabled)
         locationEnabled = defaults.bool(forKey: Keys.locationEnabled)
         fullAccuracyLocationEnabled = defaults.bool(forKey: Keys.fullAccuracyLocation)
         lastDigestCheckDate = defaults.object(forKey: Keys.lastDigestCheckDate) as? Date
@@ -173,6 +178,7 @@ final class SettingsStore: ObservableObject {
         static let healthEnabled = "settings.healthEnabled"
         static let calendarEnabled = "settings.calendarEnabled"
         static let photosEnabled = "settings.photosEnabled"
+        static let mediaEnabled = "settings.mediaEnabled"
         static let locationEnabled = "settings.locationEnabled"
         static let fullAccuracyLocation = "settings.fullAccuracyLocationEnabled"
         static let lastDigestCheckDate = "settings.lastDigestCheckDate"

@@ -16,6 +16,7 @@ struct HealthSignalProvider: DaySignalProvider {
             HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!,
         ]
         types.insert(HKObjectType.workoutType())
+        types.insert(HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!)
         return types
     }
 
@@ -45,14 +46,16 @@ struct HealthSignalProvider: DaySignalProvider {
         async let steps = quantityTotal(for: HKQuantityType.quantityType(forIdentifier: .stepCount)!, unit: .count(), in: day)
         async let distance = quantityTotal(for: HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!, unit: .meter(), in: day)
         async let workouts = workoutSummaries(in: day)
+        async let sleep = sleepHours(in: day)
 
         let payload = ActivityPayload(
             stepCount: Int(await steps),
             distanceMeters: await distance,
-            workoutSummaries: await workouts
+            workoutSummaries: await workouts,
+            sleepHours: await sleep
         )
 
-        guard payload.stepCount > 0 || payload.distanceMeters > 0 || !payload.workoutSummaries.isEmpty else {
+        guard payload.stepCount > 0 || payload.distanceMeters > 0 || !payload.workoutSummaries.isEmpty || payload.sleepHours > 0 else {
             return []
         }
 
@@ -66,6 +69,23 @@ struct HealthSignalProvider: DaySignalProvider {
             let predicate = HKQuery.predicateForSamples(withStart: day.start, end: day.end)
             let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, statistics, _ in
                 continuation.resume(returning: statistics?.sumQuantity()?.doubleValue(for: unit) ?? 0)
+            }
+            store.execute(query)
+        }
+    }
+
+    /// Total time spent in any "asleep" sub-state (as opposed to merely "in
+    /// bed") across the day, summed from possibly-overlapping source
+    /// samples. §4 lists "sleep" under the HealthKit signal table.
+    private func sleepHours(in day: DateInterval) async -> Double {
+        await withCheckedContinuation { continuation in
+            let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+            let predicate = HKQuery.predicateForSamples(withStart: day.start, end: day.end)
+            let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, _ in
+                let asleepSeconds = (samples as? [HKCategorySample] ?? [])
+                    .filter { HKCategoryValueSleepAnalysis.allAsleepValues.contains($0.value) }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                continuation.resume(returning: asleepSeconds / 3600)
             }
             store.execute(query)
         }

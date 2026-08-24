@@ -15,6 +15,16 @@ import UIKit
 /// here — until then, the button opens the Shortcuts app itself and the UI
 /// copy explains what to build by hand, so the feature degrades to a
 /// slightly worse but still-functional path rather than a dead button.
+///
+/// **Version-sensitive** (§18): the exact `"Find Notes"`/`"Open Note"`
+/// action names, their available filter options, and how reliably a
+/// personal automation with "Ask Before Running" off actually runs
+/// unattended have all changed across Shortcuts/iOS releases — confirm the
+/// manual steps above still match the current Shortcuts app before
+/// shipping this copy. Separately, `open()` always leaves this app's
+/// foreground state (§18) — there's no way to install or run a Shortcuts
+/// automation without switching apps, so anything depending on this path
+/// resuming afterward must not assume immediate re-foregrounding.
 struct ShortcutTemplate {
     let name: String
     let summary: String

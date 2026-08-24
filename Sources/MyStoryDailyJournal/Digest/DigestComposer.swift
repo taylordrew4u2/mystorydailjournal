@@ -23,6 +23,9 @@ enum DigestComposer {
         if let activityClause = activityClause(signals) {
             clauses.append(activityClause)
         }
+        if let mediaClause = mediaClause(signals) {
+            clauses.append(mediaClause)
+        }
         if let weatherClause = weatherClause(signals) {
             clauses.append(weatherClause)
         }
@@ -101,10 +104,23 @@ enum DigestComposer {
             parts.append("traveled about \(String(format: "%.1f", km)) km")
         }
         parts.append(contentsOf: activity.workoutSummaries)
+        if activity.sleepHours > 0 {
+            parts.append("slept about \(String(format: "%.1f", activity.sleepHours)) hours")
+        }
 
         guard !parts.isEmpty else { return nil }
         let sentence = parts.joined(separator: ", ")
         return sentence.prefix(1).uppercased() + sentence.dropFirst() + "."
+    }
+
+    private static func mediaClause(_ signals: [DaySignal]) -> String? {
+        guard let media = signals.first(where: { $0.kind == .media })?.payload(as: MediaPayload.self),
+              !media.titles.isEmpty else {
+            return nil
+        }
+        return media.titles.count == 1
+            ? "Listened to \"\(media.titles[0])\"."
+            : "Listened to \(media.titles.count) songs, including \"\(media.titles[0])\"."
     }
 
     private static func weatherClause(_ signals: [DaySignal]) -> String? {

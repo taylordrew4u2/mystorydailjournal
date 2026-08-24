@@ -45,6 +45,14 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("One new file in Journal"))
     }
 
+    func testComposeIncludesMediaClause() {
+        let signal = DaySignal(kind: .media, timestamp: makeDate())
+        signal.setPayload(MediaPayload(titles: ["A Song"]))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("Listened to \"A Song\""))
+    }
+
     func testComposeOmitsClausesForMissingSignalKinds() {
         let signal = DaySignal(kind: .calendar, timestamp: makeDate())
         signal.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: []))

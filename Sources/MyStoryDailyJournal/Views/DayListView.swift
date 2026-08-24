@@ -7,8 +7,18 @@ struct DayListView: View {
     @Query(sort: \DayRecord.date, order: .reverse) private var days: [DayRecord]
     @Environment(\.modelContext) private var context
 
+    private var streakStats: StreakCalculator.Stats {
+        StreakCalculator.stats(for: days)
+    }
+
     var body: some View {
         List {
+            if streakStats.currentStreak > 0 {
+                Section {
+                    StreakSummaryRow(stats: streakStats)
+                }
+            }
+
             ForEach(days) { day in
                 NavigationLink(value: day.date) {
                     DayRow(day: day)
@@ -43,6 +53,23 @@ struct DayListView: View {
                 )
             }
         }
+    }
+}
+
+/// Purely informational — no fire emoji, no "don't break the chain" framing,
+/// no red/warning color for a low written count. Auto days count toward the
+/// streak exactly the same as written ones (§8).
+private struct StreakSummaryRow: View {
+    let stats: StreakCalculator.Stats
+
+    var body: some View {
+        HStack {
+            Text("\(stats.currentStreak) day\(stats.currentStreak == 1 ? "" : "s") covered")
+            Spacer()
+            Text("\(stats.writtenCount) in your own words")
+                .foregroundStyle(.secondary)
+        }
+        .font(.footnote)
     }
 }
 

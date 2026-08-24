@@ -13,4 +13,16 @@ enum DateUtilities {
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
         return DateInterval(start: start, end: end)
     }
+
+    /// Start-of-day for `date` in a *specific* timezone rather than
+    /// whichever one the device currently reports (§10: "a day is bounded
+    /// by the user's local midnight at the time the day occurred"). Used
+    /// to check whether a moment still falls within a day that started
+    /// under a different timezone than the one currently in effect — the
+    /// mechanism that keeps a day continuous across a timezone change.
+    static func startOfDay(for date: Date, timeZoneIdentifier: String) -> Date {
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: timeZoneIdentifier) ?? .current
+        return calendar.startOfDay(for: date)
+    }
 }

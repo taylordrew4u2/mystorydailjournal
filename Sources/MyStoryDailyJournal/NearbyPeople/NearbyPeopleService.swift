@@ -9,6 +9,13 @@ import MultipeerConnectivity
 /// established) is enough to surface a name suggestion, so this never asks
 /// for anything beyond the Local Network prompt Bonjour discovery itself
 /// requires.
+///
+/// **Version-sensitive** (§18): both `NSLocalNetworkUsageDescription`'s
+/// current App Review expectations and whether `MCNearbyServiceBrowser`
+/// discovery still runs without triggering the Local Network prompt any
+/// differently than in past releases need confirming against the current
+/// SDK — this entire feature must stay privacy-inert (discovery only, no
+/// session, no data sent) regardless of how the OS-level prompts evolve.
 @MainActor
 final class NearbyPeopleService: NSObject, ObservableObject {
     static let shared = NearbyPeopleService()

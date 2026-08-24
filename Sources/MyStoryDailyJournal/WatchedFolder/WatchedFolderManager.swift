@@ -23,6 +23,13 @@ final class WatchedFolderManager: ObservableObject {
     /// Called with the URL `.fileImporter` hands back — that closure is the
     /// only window in which the URL's security scope is guaranteed valid,
     /// so the bookmark has to be created right here, synchronously.
+    ///
+    /// The baseline of "already-known" files is snapshotted right now, at
+    /// grant time — not cleared. §3/§14 both say this watches for files
+    /// *created since the last check*; clearing the known-files set would
+    /// make the very next check treat every file already sitting in the
+    /// folder as newly created, which is wrong the moment someone grants a
+    /// folder they've already been using.
     func grantAccess(to url: URL) {
         guard url.startAccessingSecurityScopedResource() else { return }
         defer { url.stopAccessingSecurityScopedResource() }
@@ -31,7 +38,8 @@ final class WatchedFolderManager: ObservableObject {
             return
         }
         defaults.set(bookmark, forKey: bookmarkKey)
-        defaults.removeObject(forKey: knownFilesKey)
+        let existingNames = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []
+        defaults.set(existingNames, forKey: knownFilesKey)
         folderDisplayName = url.lastPathComponent
     }
 

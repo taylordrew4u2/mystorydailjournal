@@ -11,6 +11,12 @@ import ActivityKit
 /// Known gap: a tag logged from the Lock Screen widget (M2) doesn't refresh
 /// this until the app is next foregrounded, since that intent runs in the
 /// widget extension process and this manager is only driven from the app.
+///
+/// **Version-sensitive** (§18): iOS enforces its own maximum Live Activity
+/// lifetime (system-set, not app-configurable, and it has moved across
+/// releases) — confirm the current limit against the actual SDK, since a
+/// "restarted daily" activity that the system ends early mid-day needs the
+/// same opportunistic-refresh handling as any other stale one.
 @MainActor
 enum LiveActivityManager {
     static func refreshForToday(isJournaled: Bool) {
