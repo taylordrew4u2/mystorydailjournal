@@ -1,9 +1,10 @@
 # My Story: Daily Journal
 
-A native iOS journaling app that guarantees every day has a record. Full
-product spec lives in the task/build prompt this repository was scaffolded
-from; this README covers what's implemented, how to build it, and what's
-left.
+A native iOS journaling app that guarantees every day has a record. The
+full product spec this repository was built from lives in
+[`BUILD_SPEC.md`](BUILD_SPEC.md), kept verbatim in the repo rather than
+only in a chat transcript; this README covers what's implemented against
+it, how to build it, and what's left.
 
 **Built without a Mac or Xcode.** Every line here was written and
 reviewed by hand — file structure, API shapes, entitlements — without a
