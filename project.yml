@@ -19,6 +19,7 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: Sources/MyStoryDailyJournal
+      - path: Sources/MyStoryDailyJournalShared
     info:
       path: Sources/MyStoryDailyJournal/Support/Info.plist
     entitlements:
@@ -31,10 +32,33 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: false
         DEVELOPMENT_ASSET_PATHS: ""
+    dependencies:
+      - target: MyStoryWidgetsExtension
+        embed: true
     scheme:
       testTargets:
         - MyStoryDailyJournalTests
       gatherCoverageData: true
+
+  MyStoryWidgetsExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources/MyStoryWidgets
+      - path: Sources/MyStoryDailyJournalShared
+    info:
+      path: Sources/MyStoryWidgets/Support/Info.plist
+    entitlements:
+      path: Sources/MyStoryWidgets/Support/MyStoryWidgets.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mystorydailyjournal.app.widgets
+        PRODUCT_NAME: MyStoryWidgets
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: false
+        SWIFT_VERSION: "6.0"
 
   MyStoryDailyJournalTests:
     type: bundle.unit-test

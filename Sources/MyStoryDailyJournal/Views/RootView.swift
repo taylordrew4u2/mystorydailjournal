@@ -9,6 +9,7 @@ struct RootView: View {
     }
 
     @EnvironmentObject private var settings: SettingsStore
+    @EnvironmentObject private var quickCapture: QuickCaptureCoordinator
     @State private var layout: Layout = .list
     @State private var path = NavigationPath()
 
@@ -31,6 +32,13 @@ struct RootView: View {
             .navigationTitle("My Story")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        quickCapture.isPresented = true
+                    } label: {
+                        Image(systemName: "bolt")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(value: DateUtilities.startOfDay(for: .now)) {
                         Image(systemName: "square.and.pencil")
                     }
@@ -46,6 +54,9 @@ struct RootView: View {
             .navigationDestination(for: Date.self) { date in
                 EntryView(date: date)
             }
+        }
+        .fullScreenCover(isPresented: $quickCapture.isPresented) {
+            QuickCaptureSheet()
         }
         .onAppear {
             if settings.justCompletedWizard {

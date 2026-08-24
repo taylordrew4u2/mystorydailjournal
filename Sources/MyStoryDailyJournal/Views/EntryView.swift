@@ -30,6 +30,9 @@ struct EntryView: View {
     @ViewBuilder
     private func content(for record: DayRecord) -> some View {
         VStack(spacing: 0) {
+            TagChipRow(date: date)
+                .padding(.top, 12)
+
             if mode != nil {
                 Picker("Mode", selection: modeBinding) {
                     Text("Freeform").tag(WritingStyle.freeform)

@@ -7,6 +7,7 @@ struct MyStoryDailyJournalApp: App {
     let container: ModelContainer
     @StateObject private var settings: SettingsStore
     @StateObject private var appLock: AppLockManager
+    @StateObject private var quickCapture = QuickCaptureCoordinator()
     private let notificationDelegate: NotificationDelegate
 
     @Environment(\.scenePhase) private var scenePhase
@@ -29,7 +30,11 @@ struct MyStoryDailyJournalApp: App {
             AppRootView()
                 .environmentObject(settings)
                 .environmentObject(appLock)
+                .environmentObject(quickCapture)
                 .tint(settings.theme.accent)
+                .onOpenURL { url in
+                    quickCapture.handle(url: url)
+                }
         }
         .modelContainer(container)
         .onChange(of: scenePhase) { _, newPhase in

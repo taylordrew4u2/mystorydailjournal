@@ -5,15 +5,14 @@ product spec lives in the task/build prompt this repository was scaffolded
 from; this README covers what's implemented, how to build it, and what's
 next.
 
-## What's here: M1 — Core loop
+## What's here: M1 + M2
 
-This is the first of ten milestones described in the build spec, built in
-the order the spec itself prescribes: the notification quick-reply
+Built in the order the build spec prescribes: the notification quick-reply
 (`UNTextInputNotificationAction`) is the single most important interaction
 in the product, so it was built first, before signals, before the digest,
-before anything else.
+before anything else. M2 (fast capture) followed directly on top.
 
-Implemented:
+### M1 — Core loop
 
 - **SwiftData models** — `DayRecord`, `DaySignal`, `Person`, `Tag`, written
   with CloudKit's schema constraints in mind (optional/defaulted fields)
@@ -38,15 +37,39 @@ Implemented:
   hand-finished home-screen icon (M9).
 - **"Your Data" screen** — plain-language, in-app statement that nothing
   leaves the device except the user's own iCloud account.
-- **Zero emoji** — audited; the codebase and every string in it uses SF
-  Symbols and plain text only.
+
+### M2 — Fast capture
+
+- **Tag-only entries** — a row of one-tap chips (Good/Rough/Busy/Quiet/
+  Notable) on the entry screen that alone constitute a valid entry; shared
+  `TagLogger` is the single write path used by the in-app row, the widget,
+  and (later) any other capture surface.
+- **Lock Screen widgets** — a new `MyStoryWidgetsExtension` target with two
+  widgets: `QuickTagWidget` (accessory circular/rectangular, an interactive
+  button that logs a configurable preset tag with **no app launch**, the
+  same "phone locked" guarantee as the notification quick-reply) and
+  `QuickWriteWidget` (accessory + Home Screen small, taps through to the
+  bare-text-field capture sheet via a `mystory://quick-capture` deep link).
+- **Quick-capture sheet** — the "opens a bare text field" fast surface:
+  nothing on screen but a text field, a mic button, and Save/Cancel.
+  Reachable from a toolbar button, the widget, or the Action Button/Siri
+  intent when it has no dictated text to attach directly.
+- **Voice capture** — on-device `SFSpeechRecognizer`
+  (`requiresOnDeviceRecognition = true`) wired into the quick-capture
+  sheet's mic button; nothing spoken leaves the device.
+- **Siri / Action Button** — `LogTodayIntent` ("Log My Day") exposed via
+  `AppShortcutsProvider`; when invoked with no text already supplied, the
+  system prompts for it itself (voice-first on Siri), so this can be fully
+  hands-free.
+- **App Group sharing** — `PersistenceController` now points at the
+  app-group container so the host app and the widget extension read and
+  write the same SwiftData store.
 
 Not yet built (see Roadmap below): background signal providers (Health,
 Calendar, Photos, Location), digest generation, CloudKit sync, Live
-Activity/widgets/Share Extension, Shortcuts ingestion, Screen Time panel,
-and the alternate app icons. None of these are missing by oversight — the
-build spec explicitly sequences them into M2 through M10, and this
-milestone was scoped to ship the core loop on its own first.
+Activity, Share Extension, Shortcuts ingestion, Screen Time panel, and the
+alternate app icons. None of these are missing by oversight — the build
+spec explicitly sequences them into M3 through M10.
 
 ## Building
 
@@ -62,11 +85,17 @@ open MyStoryDailyJournal.xcodeproj
 
 Requires Xcode 16+, iOS 18 SDK. Set your own development team and bundle
 identifier prefix in Xcode's signing settings before running on a device —
-`com.mystorydailyjournal.app` in `project.yml` is a placeholder.
+`com.mystorydailyjournal.app` (and `.widgets` for the extension) in
+`project.yml` are placeholders. The App Group identifier
+(`group.com.mystorydailyjournal.app`, in both targets' entitlements) needs
+to exist under your own team in the Apple Developer portal for the app and
+widget to actually share data on device; `PersistenceController` falls back
+to a local-only store if the group container can't be resolved, so the app
+still runs without it, just without widget/app data sharing.
 
 Run the `MyStoryDailyJournalTests` scheme for unit tests covering the
-day-record repository (idempotent lookup, quick-reply append/dedupe) and
-guided-entry composition.
+day-record repository (idempotent lookup, quick-reply append/dedupe),
+guided-entry composition, and tag logging.
 
 ### Trying the quick-reply feature
 
@@ -78,17 +107,40 @@ guided-entry composition.
    text field, type a line, and tap "Save." No app launch, no unlock
    required to type. Reopen the app to see the entry saved to today.
 
+### Trying the Lock Screen widgets
+
+1. Build and run once so the widget extension is embedded and discoverable.
+2. On the Lock Screen, long-press to edit, add a widget, and pick either
+   "Quick Tag" (choose which preset tag it logs) or "Write Today."
+3. Tapping the Quick Tag widget logs that tag to today's entry with the
+   phone still locked — no app launch. Tapping Write Today opens the app
+   straight into the bare-text-field capture sheet.
+
 ## Architecture notes
 
+- `Sources/MyStoryDailyJournalShared/` holds every type that both the app
+  and the widget extension need to compile — models, `PersistenceController`,
+  `DayRecordRepository`, `TagLogger`, `DaySignalProvider`, date/deep-link
+  helpers. It isn't a framework; both targets simply list this folder in
+  their `sources:` in `project.yml`, so each compiles its own copy. Anything
+  app-only (views, notifications, the wizard) or widget-only (the widget
+  views/intents) stays in its own target's folder.
 - `Signals/DaySignalProvider.swift` defines the protocol every future
   background signal (Health, Calendar, Photos, Location, ...) will
   implement — one provider per `DaySignalKind`, each independently
   disableable, so a denied permission degrades exactly one signal instead
   of breaking digest assembly. No concrete providers ship yet (M3).
 - `Persistence/DayRecordRepository.swift` is the single idempotent
-  find-or-create path for a day's record — both the background notification
-  delegate and the foreground entry views go through it, so "the same day
-  looked up twice" never produces a duplicate `DayRecord`.
+  find-or-create path for a day's record — the background notification
+  delegate, the foreground entry views, and the widget/Siri intents all go
+  through it, so "the same day looked up twice" never produces a duplicate
+  `DayRecord`.
+- `Persistence/TagLogger.swift` is the same idea for one-tap tags: the
+  in-app chip row and the Lock Screen widget's `LogTagIntent` both call it,
+  so there's one place that decides what "tagging a day" means.
+- `Support/AppGroup.swift` resolves the shared container URL that
+  `PersistenceController` builds its `ModelContainer` against, so the app
+  and the widget extension read and write the same on-disk store.
 - `Settings/SettingsStore.swift` holds local, device-specific preferences
   in `UserDefaults` (reminder time, palette, lock settings, wizard state) —
   deliberately separate from the CloudKit-synced `DayRecord` store per the
@@ -96,8 +148,6 @@ guided-entry composition.
 
 ## Roadmap (per the build spec's milestones)
 
-- **M2** — Lock Screen widget, tag-only entries, Siri/Action Button intent,
-  voice capture.
 - **M3** — Signal providers: HealthKit, Calendar, Photos, Core Location
   visits, one per PR, each with its own wizard step.
 - **M4** — Rule-based digest composer, midnight background job with

@@ -10,6 +10,21 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>My Story uses Face ID to keep your journal private when app lock is turned on.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>My Story turns your spoken words into text for a journal entry, entirely on this device.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>My Story records your voice only to transcribe it into a journal entry; the audio itself is never saved.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.mystorydailyjournal.app.quickcapture</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>mystory</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
