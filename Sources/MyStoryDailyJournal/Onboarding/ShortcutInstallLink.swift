@@ -35,10 +35,13 @@ struct ShortcutTemplate {
         name: "Pull today's Notes",
         summary: "Runs once a day and hands anything you wrote in Notes today to My Story.",
         manualSteps: [
-            "Add a Time of Day personal automation, set to run once daily.",
-            "Add the \"Find Notes\" action, filtered to Created Today (optionally scoped to a folder, e.g. \"Journal\").",
-            "Add the \"Add to My Story\" action and pass the found notes' text to it.",
-            "Turn off \"Ask Before Running\" so it runs unattended.",
+            "Open the Shortcuts app (already on your iPhone — swipe down on the home screen and type \"Shortcuts\" if you can't find it).",
+            "Tap \"Automation\" in the bar at the bottom of the screen, then tap the + in the top-right corner.",
+            "Tap \"Time of Day.\" Pick a time (9:00 PM works well), make sure \"Daily\" is selected, choose \"Run Immediately,\" then tap \"Next.\"",
+            "Tap \"New Blank Automation,\" then \"Add Action.\" Type \"Find Notes\" in the search box and tap it in the results.",
+            "In the Find Notes box, tap \"Add Filter\" and set it to Created Date → is today.",
+            "Tap the search bar again, type \"My Story,\" and tap \"Add to My Story.\" Tap the pale text bubble inside it and choose the \"Notes\" variable, so the notes it found are what get logged.",
+            "Tap \"Done\" in the top corner. You're finished — it now runs by itself every day.",
         ],
         installURL: nil
     )
@@ -47,12 +50,26 @@ struct ShortcutTemplate {
         name: "Log messages from someone",
         summary: "Runs the moment a message arrives from senders you pick, and logs it immediately.",
         manualSteps: [
-            "Add a Message personal automation, and pick specific senders — not \"any message.\"",
-            "Set it to Run Immediately, with \"Ask Before Running\" off.",
-            "Add the \"Add to My Story\" action and pass the incoming message's text to it.",
+            "Open the Shortcuts app (already on your iPhone — swipe down on the home screen and type \"Shortcuts\" if you can't find it).",
+            "Tap \"Automation\" in the bar at the bottom of the screen, then tap the + in the top-right corner.",
+            "Tap \"Message.\" Next to \"Sender,\" tap \"Choose\" and pick the specific people whose messages you want journaled (don't leave it as any message).",
+            "Choose \"Run Immediately,\" then tap \"Next.\"",
+            "Tap \"New Blank Automation,\" then \"Add Action.\" Type \"My Story\" in the search box and tap \"Add to My Story.\"",
+            "Tap the pale text bubble inside it and choose \"Shortcut Input,\" so the incoming message's text is what gets logged.",
+            "Tap \"Done\" in the top corner. From now on, messages from those people are logged the moment they arrive.",
         ],
         installURL: nil
     )
+
+    /// The numbered steps as one plain-text block — copied to the clipboard
+    /// before Shortcuts opens, because opening Shortcuts leaves this app
+    /// (§18) and takes these instructions off the screen with it.
+    var stepsText: String {
+        let numbered = manualSteps.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        return "\(name) — setup steps:\n\(numbered)"
+    }
 
     /// Opens the pre-filled `.shortcut` link if one's been added, or just
     /// the Shortcuts app itself as a fallback.
