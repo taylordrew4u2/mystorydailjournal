@@ -107,6 +107,30 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("Rain, high around 18°, low around 9°"))
     }
 
+    func testComposeUsesTheDaysOwnTimeZoneForTimeOfDay() {
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 3
+        components.day = 4
+        components.hour = 21
+        let ninePMUTC = utcCalendar.date(from: components)!
+
+        let signal = DaySignal(kind: .calendar, timestamp: ninePMUTC)
+        signal.setPayload(CalendarPayload(eventIdentifier: "1", title: "Breakfast", attendeeNames: []))
+
+        // 21:00 UTC is 06:00 the next morning in Tokyo — the day's stored
+        // zone must win over whatever zone the test machine is in.
+        let text = DigestComposer.compose(
+            date: ninePMUTC,
+            signals: [signal],
+            timeZoneIdentifier: "Asia/Tokyo"
+        )
+        XCTAssertTrue(text.contains("\"Breakfast\" in the morning"))
+        XCTAssertTrue(text.contains("March 5"))
+    }
+
     func testRefinementQuestionsUseEventLocationAndPhotoPlace() {
         let event = DaySignal(kind: .calendar, timestamp: makeDate())
         event.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: [], location: "Room B"))
@@ -138,7 +162,7 @@ final class DigestComposerTests: XCTestCase {
         ])
     }
 
-    func testGuidedComposeWithBaseTextLeadsWithTheDigest() {
+    @MainActor func testGuidedComposeWithBaseTextLeadsWithTheDigest() {
         let composed = GuidedEntryView.compose(
             baseText: "Wednesday, March 4. Spent time at Flatiron.",
             answers: ["It was a work trip.", "", "Felt good."]

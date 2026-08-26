@@ -14,6 +14,15 @@ enum DateUtilities {
         return DateInterval(start: start, end: end)
     }
 
+    /// The full day containing `date`, bounded by midnight in a *specific*
+    /// timezone — the day's own zone as stored on its `DayRecord`, not
+    /// whichever one the device currently reports (§10).
+    static func dayInterval(containing date: Date, timeZoneIdentifier: String) -> DateInterval {
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: timeZoneIdentifier) ?? .current
+        return dayInterval(containing: date, calendar: calendar)
+    }
+
     /// Start-of-day for `date` in a *specific* timezone rather than
     /// whichever one the device currently reports (§10: "a day is bounded
     /// by the user's local midnight at the time the day occurred"). Used

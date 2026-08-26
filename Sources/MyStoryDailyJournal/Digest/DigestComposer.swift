@@ -8,16 +8,22 @@ import Foundation
 /// Template assembly order: places visited, calendar events, photos taken,
 /// activity, weather.
 enum DigestComposer {
-    static func compose(date: Date, signals: [DaySignal]) -> String {
-        var clauses: [String] = [dateHeadline(for: date)]
+    static func compose(date: Date, signals: [DaySignal], timeZoneIdentifier: String = TimeZone.current.identifier) -> String {
+        // All "when during the day" language is anchored to the timezone the
+        // day occurred in (the record's stored zone, §10) — reading a Tokyo
+        // day back home must not shift its mornings into afternoons.
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: timeZoneIdentifier) ?? .current
+
+        var clauses: [String] = [dateHeadline(for: date, timeZone: calendar.timeZone)]
 
         if let visitClause = visitsClause(signals) {
             clauses.append(visitClause)
         }
-        if let calendarClause = calendarClause(signals) {
+        if let calendarClause = calendarClause(signals, calendar: calendar) {
             clauses.append(calendarClause)
         }
-        if let photoClause = photosClause(signals) {
+        if let photoClause = photosClause(signals, calendar: calendar) {
             clauses.append(photoClause)
         }
         if let activityClause = activityClause(signals) {
@@ -95,8 +101,10 @@ enum DigestComposer {
         return questions
     }
 
-    private static func dateHeadline(for date: Date) -> String {
-        date.formatted(.dateTime.weekday(.wide).month(.wide).day()) + "."
+    private static func dateHeadline(for date: Date, timeZone: TimeZone) -> String {
+        var style = Date.FormatStyle.dateTime.weekday(.wide).month(.wide).day()
+        style.timeZone = timeZone
+        return date.formatted(style) + "."
     }
 
     private static func visitsClause(_ signals: [DaySignal]) -> String? {
@@ -124,14 +132,14 @@ enum DigestComposer {
     /// in the payload but are deliberately never written here — §4: they
     /// don't enter a digest without the user confirming them (the guided
     /// refinement flow asks instead).
-    private static func calendarClause(_ signals: [DaySignal]) -> String? {
+    private static func calendarClause(_ signals: [DaySignal], calendar: Calendar) -> String? {
         let events = signals
             .filter { $0.kind == .calendar }
             .sorted { $0.timestamp < $1.timestamp }
 
         let described: [String] = events.compactMap { signal in
             guard let payload = signal.payload(as: CalendarPayload.self) else { return nil }
-            var description = "\"\(payload.title)\" \(timeOfDayPhrase(for: signal.timestamp))"
+            var description = "\"\(payload.title)\" \(timeOfDayPhrase(for: signal.timestamp, calendar: calendar))"
             if let location = payload.location {
                 description += " at \(location)"
             }
@@ -142,7 +150,7 @@ enum DigestComposer {
         return "On the calendar: " + described.joined(separator: "; ") + "."
     }
 
-    private static func photosClause(_ signals: [DaySignal]) -> String? {
+    private static func photosClause(_ signals: [DaySignal], calendar: Calendar) -> String? {
         let photoSignals = signals.filter { $0.kind == .photo }
         let photos = photoSignals.compactMap { $0.payload(as: PhotoPayload.self) }
         guard !photos.isEmpty else { return nil }
@@ -171,7 +179,7 @@ enum DigestComposer {
                 .map(\.timestamp)
                 .sorted()
             if let median = cameraTimes.dropFirst(cameraTimes.count / 2).first {
-                sentence += " \(timeOfDayPhrase(for: median))"
+                sentence += " \(timeOfDayPhrase(for: median, calendar: calendar))"
             }
         }
         return sentence + "."
@@ -225,9 +233,10 @@ enum DigestComposer {
     }
 
     /// Deterministic bucket for "when during the day," shared by every
-    /// clause that has a meaningful timestamp to lean on.
-    private static func timeOfDayPhrase(for date: Date) -> String {
-        switch Calendar.current.component(.hour, from: date) {
+    /// clause that has a meaningful timestamp to lean on. The calendar
+    /// carries the day's own timezone, not necessarily the device's.
+    private static func timeOfDayPhrase(for date: Date, calendar: Calendar) -> String {
+        switch calendar.component(.hour, from: date) {
         case 5..<12: "in the morning"
         case 12..<17: "in the afternoon"
         case 17..<22: "in the evening"
