@@ -1,5 +1,6 @@
 import Foundation
 import Photos
+import CoreLocation
 
 /// Photos and screenshots taken that day. Stores `PHAsset` local
 /// identifiers only — never copies image bytes into the journal store (§4,
@@ -30,16 +31,37 @@ struct PhotosSignalProvider: DaySignalProvider {
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
 
         let assets = PHAsset.fetchAssets(with: options)
-        var signals: [DaySignal] = []
+        var drafts: [(identifier: String, isScreenshot: Bool, location: CLLocation?, timestamp: Date)] = []
         assets.enumerateObjects { asset, _, _ in
-            let payload = PhotoPayload(
-                assetLocalIdentifier: asset.localIdentifier,
-                isScreenshot: asset.mediaSubtypes.contains(.photoScreenshot)
-            )
-            let signal = DaySignal(kind: .photo, timestamp: asset.creationDate ?? day.start)
-            signal.setPayload(payload)
-            signals.append(signal)
+            drafts.append((
+                identifier: asset.localIdentifier,
+                isScreenshot: asset.mediaSubtypes.contains(.photoScreenshot),
+                location: asset.location,
+                timestamp: asset.creationDate ?? day.start
+            ))
         }
-        return signals
+
+        // One reverse-geocode per day, on the first geotagged shot: a place
+        // name is a derived summary (§10), and a single lookup stays well
+        // inside CLGeocoder's rate limit even when the 30-day backfill runs
+        // this for a month of days in a row.
+        var placeName: String?
+        if let location = drafts.first(where: { $0.location != nil })?.location,
+           let placemark = try? await CLGeocoder().reverseGeocodeLocation(location).first {
+            placeName = placemark.name ?? placemark.locality
+        }
+
+        return drafts.map { draft in
+            let payload = PhotoPayload(
+                assetLocalIdentifier: draft.identifier,
+                isScreenshot: draft.isScreenshot,
+                placeName: draft.location != nil ? placeName : nil,
+                latitude: draft.location?.coordinate.latitude,
+                longitude: draft.location?.coordinate.longitude
+            )
+            let signal = DaySignal(kind: .photo, timestamp: draft.timestamp)
+            signal.setPayload(payload)
+            return signal
+        }
     }
 }

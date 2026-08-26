@@ -11,11 +11,11 @@ import SwiftData
 /// `SharedItemIngestor`, so a note pulled by Shortcuts and a note pushed
 /// by hand look identical in the data model (§10).
 struct IngestSharedContentIntent: AppIntent {
-    static var title: LocalizedStringResource = "Add to My Story"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Add to My Story"
+    static let description = IntentDescription(
         "Adds shared text — from a Notes pull or a Messages trigger — to today's journal signals."
     )
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @Parameter(title: "Text")
     var text: String

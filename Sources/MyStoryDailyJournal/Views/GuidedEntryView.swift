@@ -7,6 +7,10 @@ import SwiftData
 struct GuidedEntryView: View {
     @Bindable var record: DayRecord
     let questionSet: QuestionSet
+    /// When non-empty (the refinement flow on an auto-generated day), the
+    /// composed entry starts from this text and the answers follow it, so
+    /// the digest's facts survive alongside the user's own words.
+    var baseText: String = ""
     var onSave: () -> Void = {}
 
     @Environment(\.modelContext) private var context
@@ -15,10 +19,12 @@ struct GuidedEntryView: View {
     @State private var currentIndex = 0
     @State private var isReviewing = false
     @State private var composedText = ""
+    @State private var isWeavingRewrite = false
 
-    init(record: DayRecord, questionSet: QuestionSet, onSave: @escaping () -> Void = {}) {
+    init(record: DayRecord, questionSet: QuestionSet, baseText: String = "", onSave: @escaping () -> Void = {}) {
         self.record = record
         self.questionSet = questionSet
+        self.baseText = baseText
         self.onSave = onSave
         _answers = State(initialValue: Array(repeating: "", count: questionSet.prompts.count))
     }
@@ -66,15 +72,23 @@ struct GuidedEntryView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            TextEditor(text: $composedText)
-                .font(.system(.body, design: .serif))
-                .scrollContentBackground(.hidden)
+            if isWeavingRewrite {
+                Spacer()
+                ProgressView("Weaving your details in…")
+                    .frame(maxWidth: .infinity)
+                Spacer()
+            } else {
+                TextEditor(text: $composedText)
+                    .font(.system(.body, design: .serif))
+                    .scrollContentBackground(.hidden)
+            }
 
             HStack {
                 Button("Back to questions") { isReviewing = false }
                 Spacer()
                 Button("Save") { save() }
                     .buttonStyle(.borderedProminent)
+                    .disabled(isWeavingRewrite)
             }
         }
         .padding()
@@ -84,8 +98,31 @@ struct GuidedEntryView: View {
         if currentIndex < questionSet.prompts.count - 1 {
             currentIndex += 1
         } else {
-            composedText = Self.compose(answers: answers)
+            composedText = Self.compose(baseText: baseText, answers: answers)
             isReviewing = true
+            weaveRewriteIfRefining()
+        }
+    }
+
+    /// The refinement flow's whole point (per the user's spec): after the
+    /// questions, the digest gets *rewritten* with the new details in the
+    /// right places, not just appended to. Best-effort — the plain
+    /// composition is already on screen as the fallback, and stays if the
+    /// on-device model can't run or the user went back to the questions.
+    private func weaveRewriteIfRefining() {
+        guard !baseText.isEmpty, !isWeavingRewrite else { return }
+        isWeavingRewrite = true
+
+        let pairs = zip(questionSet.prompts, answers).map { (question: $0, answer: $1) }
+        let digest = baseText
+        Task {
+            let woven = await DigestRewriter.integrateRefinements(digest: digest, questionsAndAnswers: pairs)
+            await MainActor.run {
+                if let woven, isReviewing {
+                    composedText = woven
+                }
+                isWeavingRewrite = false
+            }
         }
     }
 
@@ -103,6 +140,15 @@ struct GuidedEntryView: View {
     static func compose(answers: [String]) -> String {
         answers
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
+    }
+
+    /// Refinement variant: the existing text leads, the answers follow.
+    static func compose(baseText: String, answers: [String]) -> String {
+        let trimmedBase = baseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let answerText = compose(answers: answers)
+        return [trimmedBase, answerText]
             .filter { !$0.isEmpty }
             .joined(separator: "\n\n")
     }

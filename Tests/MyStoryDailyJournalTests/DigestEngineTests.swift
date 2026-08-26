@@ -83,10 +83,9 @@ final class DigestEngineTests: XCTestCase {
     /// app could have observed about a day before it was ever launched. An
     /// earlier version of this fallback backdated one extra day and
     /// fabricated a digest for the day before first launch.
-    @MainActor
     func testCatchUpOnFirstRunGeneratesNoDays() async {
         let context = makeContext()
-        SettingsStore.shared.lastDigestCheckDate = nil
+        await MainActor.run { SettingsStore.shared.lastDigestCheckDate = nil }
 
         await DigestEngine.catchUpMissingDays(in: context)
 

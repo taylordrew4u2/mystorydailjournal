@@ -16,9 +16,9 @@ enum PresetTag: String, CaseIterable, Identifiable, AppEnum {
 
     var id: String { rawValue }
 
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Tag"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Tag"
 
-    static var caseDisplayRepresentations: [PresetTag: DisplayRepresentation] = [
+    static let caseDisplayRepresentations: [PresetTag: DisplayRepresentation] = [
         .good: "Good",
         .rough: "Rough",
         .busy: "Busy",

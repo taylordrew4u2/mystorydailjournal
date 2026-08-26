@@ -25,10 +25,16 @@ final class ScreenTimeAuthorizationManager: ObservableObject {
 
     func requestAuthorization() async {
         do {
-            try await center.requestAuthorization(for: .individual)
+            try await Self.requestSystemAuthorization()
             isAuthorized = center.authorizationStatus == .approved
         } catch {
             isAuthorized = false
         }
+    }
+
+    /// AuthorizationCenter isn't Sendable, so the async request runs in a
+    /// nonisolated context instead of sending the instance off the main actor.
+    private nonisolated static func requestSystemAuthorization() async throws {
+        try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
     }
 }

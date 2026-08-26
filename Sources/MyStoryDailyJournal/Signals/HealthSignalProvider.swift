@@ -83,7 +83,10 @@ struct HealthSignalProvider: DaySignalProvider {
             let predicate = HKQuery.predicateForSamples(withStart: day.start, end: day.end)
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, _ in
                 let asleepSeconds = (samples as? [HKCategorySample] ?? [])
-                    .filter { HKCategoryValueSleepAnalysis.allAsleepValues.contains($0.value) }
+                    .filter { sample in
+                        guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { return false }
+                        return HKCategoryValueSleepAnalysis.allAsleepValues.contains(value)
+                    }
                     .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
                 continuation.resume(returning: asleepSeconds / 3600)
             }

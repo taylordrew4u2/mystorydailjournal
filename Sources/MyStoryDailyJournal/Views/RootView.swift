@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// §16: "Two views, one toggle, not two tabs." A segmented control switches
 /// between the List and Month Grid, not separate tab bar items.
@@ -10,6 +11,7 @@ struct RootView: View {
 
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var quickCapture: QuickCaptureCoordinator
+    @Environment(\.modelContext) private var context
     @State private var layout: Layout = .list
     @State private var path = NavigationPath()
 
@@ -64,6 +66,15 @@ struct RootView: View {
             if settings.justCompletedWizard {
                 settings.justCompletedWizard = false
                 path.append(DateUtilities.startOfDay(for: .now))
+
+                // The launch-time catch-up already ran before the wizard
+                // could grant any permissions, so kick the historical
+                // backfill here too — this is the moment a fresh install
+                // first has signal sources to mine.
+                let container = context.container
+                Task {
+                    await DigestEngine.backfillHistoryIfNeeded(in: ModelContext(container))
+                }
             }
         }
     }

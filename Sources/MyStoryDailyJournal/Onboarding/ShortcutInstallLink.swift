@@ -56,7 +56,7 @@ struct ShortcutTemplate {
 
     /// Opens the pre-filled `.shortcut` link if one's been added, or just
     /// the Shortcuts app itself as a fallback.
-    func open() {
+    @MainActor func open() {
         let url = installURL ?? URL(string: "shortcuts://")!
         UIApplication.shared.open(url)
     }

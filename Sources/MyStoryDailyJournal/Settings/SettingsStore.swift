@@ -110,6 +110,14 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    /// One-shot: whether the post-install historical backfill has already
+    /// reconstructed the days before installation from Health/Calendar/Photos
+    /// history. Stays `false` until at least one signal source is enabled, so
+    /// enabling a source later still triggers the backfill.
+    @Published var historyBackfillCompleted: Bool {
+        didSet { defaults.set(historyBackfillCompleted, forKey: Keys.historyBackfillCompleted) }
+    }
+
     /// §9, §13 M10: optional on-device rewrite of the digest into a more
     /// natural voice. Default off — the rule-based composer stays the
     /// fallback regardless.
@@ -150,6 +158,7 @@ final class SettingsStore: ObservableObject {
         locationEnabled = defaults.bool(forKey: Keys.locationEnabled)
         fullAccuracyLocationEnabled = defaults.bool(forKey: Keys.fullAccuracyLocation)
         lastDigestCheckDate = defaults.object(forKey: Keys.lastDigestCheckDate) as? Date
+        historyBackfillCompleted = defaults.bool(forKey: Keys.historyBackfillCompleted)
         digestRewriteEnabled = defaults.bool(forKey: Keys.digestRewriteEnabled)
         nearbyPeopleEnabled = defaults.bool(forKey: Keys.nearbyPeopleEnabled)
         myDisplayName = defaults.string(forKey: Keys.myDisplayName) ?? ""
@@ -182,6 +191,7 @@ final class SettingsStore: ObservableObject {
         static let locationEnabled = "settings.locationEnabled"
         static let fullAccuracyLocation = "settings.fullAccuracyLocationEnabled"
         static let lastDigestCheckDate = "settings.lastDigestCheckDate"
+        static let historyBackfillCompleted = "settings.historyBackfillCompleted"
         static let digestRewriteEnabled = "settings.digestRewriteEnabled"
         static let nearbyPeopleEnabled = "settings.nearbyPeopleEnabled"
         static let myDisplayName = "settings.myDisplayName"

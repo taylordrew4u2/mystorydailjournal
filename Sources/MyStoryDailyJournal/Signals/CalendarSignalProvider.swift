@@ -32,10 +32,12 @@ struct CalendarSignalProvider: DaySignalProvider {
         }
 
         return events.map { event in
+            let trimmedLocation = event.location?.trimmingCharacters(in: .whitespacesAndNewlines)
             let payload = CalendarPayload(
                 eventIdentifier: event.eventIdentifier ?? UUID().uuidString,
                 title: event.title ?? "Untitled event",
-                attendeeNames: (event.attendees ?? []).compactMap(\.name)
+                attendeeNames: (event.attendees ?? []).compactMap(\.name),
+                location: (trimmedLocation?.isEmpty ?? true) ? nil : trimmedLocation
             )
             let signal = DaySignal(kind: .calendar, timestamp: event.startDate)
             signal.setPayload(payload)

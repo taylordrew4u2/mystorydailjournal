@@ -8,6 +8,7 @@ import SwiftData
 final class Tag {
     var name: String = ""
     var createdAt: Date = Date.distantPast
+    var dayRecords: [DayRecord]? = []
 
     init(name: String, createdAt: Date = .now) {
         self.name = name

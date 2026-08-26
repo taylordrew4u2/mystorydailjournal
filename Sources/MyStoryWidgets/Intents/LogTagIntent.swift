@@ -6,8 +6,8 @@ import SwiftData
 /// that it never launches the app, matching the notification quick-reply's
 /// "no app launch" behavior (§0, §5 item 2).
 struct LogTagIntent: AppIntent {
-    static var title: LocalizedStringResource = "Log Tag"
-    static var openAppWhenRun: Bool = false
+    static let title: LocalizedStringResource = "Log Tag"
+    static let openAppWhenRun: Bool = false
 
     @Parameter(title: "Tag")
     var tag: PresetTag

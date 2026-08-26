@@ -32,7 +32,7 @@ final class DayRecord {
     /// Not a schema-level unique constraint — SwiftData/CloudKit doesn't
     /// support those (build spec §11). Uniqueness per calendar day is
     /// enforced in application logic by `DayRecordRepository`.
-    var date: Date
+    var date: Date = Date.distantPast
 
     var sourceRaw: String = DayRecordSource.blank.rawValue
     var bodyText: String = ""
@@ -41,8 +41,8 @@ final class DayRecord {
     var createdAt: Date = Date.distantPast
     var editedAt: Date = Date.distantPast
 
-    @Relationship(deleteRule: .nullify) var tags: [Tag]? = []
-    @Relationship(deleteRule: .nullify) var people: [Person]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Tag.dayRecords) var tags: [Tag]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Person.dayRecords) var people: [Person]? = []
     @Relationship(deleteRule: .cascade, inverse: \DaySignal.dayRecord) var signals: [DaySignal]? = []
 
     var source: DayRecordSource {

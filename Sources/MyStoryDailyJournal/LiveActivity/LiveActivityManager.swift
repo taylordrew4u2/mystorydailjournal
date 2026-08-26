@@ -25,25 +25,32 @@ enum LiveActivityManager {
         let dateDescription = Date.now.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
         let state = JournalActivityAttributes.ContentState(isJournaled: isJournaled, dateDescription: dateDescription)
 
-        if let existing = Activity<JournalActivityAttributes>.activities.first {
-            Task { await existing.update(ActivityContent(state: state, staleDate: nil)) }
-            return
-        }
+        // The Activity objects are non-Sendable, so both the lookup and the
+        // async update happen inside one detached task — they never cross
+        // back into the main actor.
+        Task.detached {
+            if let existing = Activity<JournalActivityAttributes>.activities.first {
+                await existing.update(ActivityContent(state: state, staleDate: nil))
+                return
+            }
 
-        do {
-            _ = try Activity.request(
-                attributes: JournalActivityAttributes(),
-                content: ActivityContent(state: state, staleDate: nil)
-            )
-        } catch {
-            // Live Activities are a nice-to-have surface, not a data path —
-            // failing to start one should never interrupt the rest of the app.
+            do {
+                _ = try Activity.request(
+                    attributes: JournalActivityAttributes(),
+                    content: ActivityContent(state: state, staleDate: nil)
+                )
+            } catch {
+                // Live Activities are a nice-to-have surface, not a data path —
+                // failing to start one should never interrupt the rest of the app.
+            }
         }
     }
 
     static func endAll() {
-        for activity in Activity<JournalActivityAttributes>.activities {
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        Task.detached {
+            for activity in Activity<JournalActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
         }
     }
 }

@@ -13,12 +13,25 @@ struct VisitPayload: Codable {
 struct PhotoPayload: Codable {
     var assetLocalIdentifier: String
     var isScreenshot: Bool
+
+    /// Derived from the asset's own metadata (§10: summaries, not content):
+    /// where and roughly when the shot was taken. All optional — screenshots
+    /// and location-stripped photos simply leave them nil, and payloads
+    /// stored before these fields existed decode fine without them.
+    var placeName: String? = nil
+    var latitude: Double? = nil
+    var longitude: Double? = nil
 }
 
 struct CalendarPayload: Codable {
     var eventIdentifier: String
     var title: String
     var attendeeNames: [String]
+
+    /// The event's own location field, when the organizer filled one in —
+    /// a derived summary (§10). Optional so payloads stored before this
+    /// field existed decode fine without it.
+    var location: String? = nil
 }
 
 struct ActivityPayload: Codable {

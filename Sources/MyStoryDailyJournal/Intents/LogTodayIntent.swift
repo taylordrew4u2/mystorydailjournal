@@ -8,11 +8,11 @@ import SwiftData
 /// `perform()` runs; that prompt is voice-first on Siri, so this can be a
 /// fully hands-free, phone-in-pocket capture path.
 struct LogTodayIntent: AppIntent {
-    static var title: LocalizedStringResource = "Log My Day"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Log My Day"
+    static let description = IntentDescription(
         "Add a line to today's journal entry, right from Siri or the Action Button."
     )
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @Parameter(title: "What happened today")
     var entryText: String

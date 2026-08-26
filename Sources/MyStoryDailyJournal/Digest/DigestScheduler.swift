@@ -37,6 +37,7 @@ enum DigestScheduler {
     static func runForegroundCatchUp(container: ModelContainer) {
         Task {
             let context = ModelContext(container)
+            await DigestEngine.backfillHistoryIfNeeded(in: context)
             await DigestEngine.catchUpMissingDays(in: context)
             await WatchedFolderManager.shared.checkForNewFiles(in: context)
         }
@@ -45,15 +46,27 @@ enum DigestScheduler {
     private static func handle(_ task: BGAppRefreshTask, container: ModelContainer) {
         scheduleNextMidnightRun()
 
+        // BGTask isn't Sendable, but setTaskCompleted is documented as
+        // thread-safe, so boxing it to cross into the Task is fine.
+        let boxedTask = UncheckedSendable(task)
         let work = Task {
             let context = ModelContext(container)
+            await DigestEngine.backfillHistoryIfNeeded(in: context)
             await DigestEngine.catchUpMissingDays(in: context)
             await WatchedFolderManager.shared.checkForNewFiles(in: context)
-            task.setTaskCompleted(success: true)
+            boxedTask.value.setTaskCompleted(success: true)
         }
 
         task.expirationHandler = {
             work.cancel()
         }
+    }
+}
+
+private struct UncheckedSendable<Value>: @unchecked Sendable {
+    let value: Value
+
+    init(_ value: Value) {
+        self.value = value
     }
 }

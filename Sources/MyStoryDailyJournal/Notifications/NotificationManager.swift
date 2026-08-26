@@ -1,5 +1,5 @@
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// Owns notification authorization, category/action registration, and daily
 /// reminder scheduling (build spec §8, §5.1).
@@ -47,6 +47,7 @@ enum NotificationManager {
     /// Schedules the recurring daily reminder plus an escalation follow-up,
     /// both driven by `SettingsStore`. Call again whenever the reminder time
     /// or follow-up interval changes; old requests are replaced by ID.
+    @MainActor
     static func scheduleDailyReminder(settings: SettingsStore) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [

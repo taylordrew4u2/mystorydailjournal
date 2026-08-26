@@ -14,11 +14,19 @@ enum AppGroup {
     /// resolved — e.g. entitlements not yet provisioned in a dev build —
     /// rather than crashing.
     static var storeURL: URL {
-        guard let containerURL = FileManager.default.containerURL(
+        let directoryURL: URL
+        if let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: identifier
-        ) else {
-            return URL.applicationSupportDirectory.appending(path: "MyStoryDailyJournal.sqlite")
+        ) {
+            directoryURL = containerURL
+        } else {
+            directoryURL = URL.applicationSupportDirectory
         }
-        return containerURL.appending(path: "MyStoryDailyJournal.sqlite")
+
+        try? FileManager.default.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
+        return directoryURL.appending(path: "MyStoryDailyJournal.sqlite")
     }
 }

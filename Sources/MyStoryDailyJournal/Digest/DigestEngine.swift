@@ -42,7 +42,10 @@ enum DigestEngine {
         if await settings.mediaEnabled {
             freshSignals += (try? await MediaSignalProvider().collectSignals(for: day)) ?? []
         }
-        if let coordinate = visitCoordinate(in: record.signals ?? []),
+        // Visits are the primary location source, but backfilled days predate
+        // installation and have none — a geotagged photo from that day is the
+        // next best anchor for the weather lookup.
+        if let coordinate = visitCoordinate(in: record.signals ?? []) ?? photoCoordinate(in: freshSignals),
            let weatherSignal = await WeatherSignalProvider().collectSignal(for: day, at: coordinate) {
             freshSignals.append(weatherSignal)
         }
@@ -103,10 +106,55 @@ enum DigestEngine {
         await MainActor.run { settings.lastDigestCheckDate = yesterday }
     }
 
+    /// How far back a fresh install reaches when reconstructing days the app
+    /// never observed live. Health, Calendar, and Photos all answer
+    /// historical queries, so a brand-new install can still tell the story
+    /// of the last month. Days beyond this window stay reachable through the
+    /// per-day "Generate this day" button in `EntryView`.
+    static let historyBackfillDayCount = 30
+
+    /// One-shot counterpart to `catchUpMissingDays` for days *before*
+    /// installation: on a brand-new install, mines historical Health,
+    /// Calendar, and Photos data to generate digests for the last
+    /// `historyBackfillDayCount` days. Waits until the wizard has run (so
+    /// permissions exist) and at least one signal source is enabled —
+    /// otherwise every backfilled day would just read "no signals," so it
+    /// stays pending until a source is turned on.
+    static func backfillHistoryIfNeeded(in context: ModelContext) async {
+        let settings = await SettingsStore.shared
+        guard await settings.wizardCompleted, !(await settings.historyBackfillCompleted) else { return }
+
+        let anySourceEnabled = await MainActor.run {
+            settings.healthEnabled || settings.calendarEnabled
+                || settings.photosEnabled || settings.mediaEnabled
+        }
+        guard anySourceEnabled else { return }
+
+        let calendar = Calendar.current
+        let today = DateUtilities.startOfDay(for: .now)
+        for daysAgo in stride(from: historyBackfillDayCount, through: 1, by: -1) {
+            guard let day = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
+            await generateDigestIfNeeded(for: day, in: context)
+        }
+
+        await MainActor.run { settings.historyBackfillCompleted = true }
+    }
+
     private static func visitCoordinate(in signals: [DaySignal]) -> CLLocationCoordinate2D? {
         guard let visit = signals.first(where: { $0.kind == .visit })?.payload(as: VisitPayload.self) else {
             return nil
         }
         return CLLocationCoordinate2D(latitude: visit.latitude, longitude: visit.longitude)
+    }
+
+    private static func photoCoordinate(in signals: [DaySignal]) -> CLLocationCoordinate2D? {
+        let geotagged = signals
+            .filter { $0.kind == .photo }
+            .compactMap { $0.payload(as: PhotoPayload.self) }
+            .first { $0.latitude != nil && $0.longitude != nil }
+        guard let latitude = geotagged?.latitude, let longitude = geotagged?.longitude else {
+            return nil
+        }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }

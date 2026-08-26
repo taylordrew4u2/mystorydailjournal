@@ -7,8 +7,8 @@ import AppIntents
 /// certain to run on every foreground — is what actually presents the
 /// quick-capture sheet.
 struct OpenQuickCaptureControlIntent: AppIntent {
-    static var title: LocalizedStringResource = "Write Today"
-    static var openAppWhenRun: Bool = true
+    static let title: LocalizedStringResource = "Write Today"
+    static let openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
         PendingActionStore.requestQuickCapture()

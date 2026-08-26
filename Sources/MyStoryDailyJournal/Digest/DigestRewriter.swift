@@ -22,6 +22,7 @@ enum DigestRewriter {
         guard await SettingsStore.shared.digestRewriteEnabled else { return ruleBasedText }
 
         #if canImport(FoundationModels)
+        guard #available(iOS 26.0, *) else { return ruleBasedText }
         do {
             return try await attemptRewrite(of: ruleBasedText) ?? ruleBasedText
         } catch {
@@ -32,7 +33,52 @@ enum DigestRewriter {
         #endif
     }
 
+    /// Weaves the guided refinement answers into the auto-generated digest,
+    /// producing one coherent first-person entry instead of a digest with
+    /// answers stapled on. Returns `nil` whenever the on-device model can't
+    /// help (unavailable hardware, thrown error, empty response) — the
+    /// caller keeps the plain digest-plus-answers composition as fallback.
+    /// Not gated behind `digestRewriteEnabled`: the user explicitly asked
+    /// for this rewrite by walking through the questions.
+    static func integrateRefinements(digest: String, questionsAndAnswers: [(question: String, answer: String)]) async -> String? {
+        let answered = questionsAndAnswers.filter {
+            !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        guard !answered.isEmpty else { return nil }
+
+        #if canImport(FoundationModels)
+        guard #available(iOS 26.0, *) else { return nil }
+        let transcript = answered
+            .map { "Q: \($0.question)\nA: \($0.answer)" }
+            .joined(separator: "\n")
+        let prompt = """
+        Below is an automatically generated journal entry followed by the \
+        writer's own answers to follow-up questions. Rewrite everything as \
+        one natural, first-person journal entry, weaving the answers into \
+        the right places. Keep every fact from both the entry and the \
+        answers — people, places, event names, numbers — and do not invent \
+        anything that isn't stated. No emoji, plain text only.
+
+        Entry:
+        \(digest)
+
+        \(transcript)
+        """
+        do {
+            guard case .available = SystemLanguageModel.default.availability else { return nil }
+            let response = try await LanguageModelSession().respond(to: prompt)
+            let rewritten = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            return rewritten.isEmpty ? nil : rewritten
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     #if canImport(FoundationModels)
+    @available(iOS 26.0, *)
     private static func attemptRewrite(of text: String) async throws -> String? {
         guard case .available = SystemLanguageModel.default.availability else {
             return nil

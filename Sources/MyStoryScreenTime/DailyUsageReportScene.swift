@@ -4,7 +4,7 @@ import SwiftUI
 /// Renders whatever `DeviceActivityResults` the system hands this
 /// extension into a plain, minimal usage view. `context` must match
 /// `ScreenTimePanel.context` in the host app.
-struct DailyUsageReportScene: DeviceActivityReportScene {
+nonisolated struct DailyUsageReportScene: DeviceActivityReportScene {
     let context: DeviceActivityReport.Context = .init(rawValue: "dailyUsage")
 
     let content: (DailyUsageConfiguration) -> DailyUsageView = { configuration in

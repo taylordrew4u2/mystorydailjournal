@@ -31,7 +31,7 @@ final class DigestComposerTests: XCTestCase {
         let text = DigestComposer.compose(date: makeDate(), signals: makeMixedSignals())
 
         XCTAssertTrue(text.contains("Flatiron"))
-        XCTAssertTrue(text.contains("calendar event"))
+        XCTAssertTrue(text.contains("Standup"))
         XCTAssertTrue(text.contains("photo"))
         XCTAssertTrue(text.contains("steps"))
         XCTAssertTrue(text.contains("Rain"))
@@ -59,9 +59,103 @@ final class DigestComposerTests: XCTestCase {
 
         let text = DigestComposer.compose(date: makeDate(), signals: [signal])
 
-        XCTAssertTrue(text.contains("One calendar event"))
+        XCTAssertTrue(text.contains("Standup"))
         XCTAssertFalse(text.contains("steps"))
         XCTAssertFalse(text.contains("photo"))
+    }
+
+    func testCalendarClauseNamesEventTimeAndPlace() {
+        let signal = DaySignal(kind: .calendar, timestamp: makeDate())
+        signal.setPayload(CalendarPayload(
+            eventIdentifier: "1",
+            title: "Dinner with the team",
+            attendeeNames: [],
+            location: "Luigi's Trattoria"
+        ))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("\"Dinner with the team\" in the afternoon at Luigi's Trattoria"))
+    }
+
+    func testCalendarClauseNeverLeaksAttendeeNames() {
+        let signal = DaySignal(kind: .calendar, timestamp: makeDate())
+        signal.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: ["Alex Priv"]))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertFalse(text.contains("Alex Priv"))
+    }
+
+    func testPhotosClauseIncludesPlaceAndTimeOfDay() {
+        let signal = DaySignal(kind: .photo, timestamp: makeDate())
+        signal.setPayload(PhotoPayload(
+            assetLocalIdentifier: "abc",
+            isScreenshot: false,
+            placeName: "Golden Gate Park",
+            latitude: 37.77,
+            longitude: -122.47
+        ))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("Took one photo around Golden Gate Park in the afternoon"))
+    }
+
+    func testWeatherClauseIncludesTemperatures() {
+        let signal = DaySignal(kind: .weather, timestamp: makeDate())
+        signal.setPayload(WeatherPayload(conditionDescription: "Rain", highTemperatureCelsius: 17.6, lowTemperatureCelsius: 9.3))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("Rain, high around 18°, low around 9°"))
+    }
+
+    func testRefinementQuestionsUseEventLocationAndPhotoPlace() {
+        let event = DaySignal(kind: .calendar, timestamp: makeDate())
+        event.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: [], location: "Room B"))
+
+        let photo = DaySignal(kind: .photo, timestamp: makeDate())
+        photo.setPayload(PhotoPayload(assetLocalIdentifier: "abc", isScreenshot: false, placeName: "Golden Gate Park"))
+
+        let questions = DigestComposer.refinementQuestions(signals: [event, photo])
+        XCTAssertTrue(questions.contains("How did \"Standup\" at Room B go, and who was there?"))
+        XCTAssertTrue(questions.contains("You took photos around Golden Gate Park — what was happening there?"))
+    }
+
+    func testRefinementQuestionsAskAboutSpecificSignals() {
+        let questions = DigestComposer.refinementQuestions(signals: makeMixedSignals())
+
+        XCTAssertTrue(questions.contains { $0.contains("Flatiron") })
+        XCTAssertTrue(questions.contains { $0.contains("Standup") })
+        XCTAssertTrue(questions.contains { $0.contains("photo") })
+        XCTAssertTrue(questions.contains("How were you feeling that day?"))
+        XCTAssertLessThanOrEqual(questions.count, 5)
+    }
+
+    func testRefinementQuestionsWithNoSignalsStillAskTheOpenOnes() {
+        let questions = DigestComposer.refinementQuestions(signals: [])
+
+        XCTAssertEqual(questions, [
+            "How were you feeling that day?",
+            "Anything else worth remembering?",
+        ])
+    }
+
+    func testGuidedComposeWithBaseTextLeadsWithTheDigest() {
+        let composed = GuidedEntryView.compose(
+            baseText: "Wednesday, March 4. Spent time at Flatiron.",
+            answers: ["It was a work trip.", "", "Felt good."]
+        )
+
+        XCTAssertEqual(
+            composed,
+            "Wednesday, March 4. Spent time at Flatiron.\n\nIt was a work trip.\n\nFelt good."
+        )
+    }
+
+    func testGuidedComposeWithEmptyBaseTextMatchesPlainCompose() {
+        let answers = ["One thing.", "Another."]
+        XCTAssertEqual(
+            GuidedEntryView.compose(baseText: "", answers: answers),
+            GuidedEntryView.compose(answers: answers)
+        )
     }
 
     private func makeMixedSignals() -> [DaySignal] {

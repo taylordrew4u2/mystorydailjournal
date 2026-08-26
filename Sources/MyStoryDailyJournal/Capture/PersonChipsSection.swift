@@ -116,7 +116,7 @@ struct PersonChipsSection: View {
 }
 
 private struct Chip: View, Identifiable {
-    var id: String { label }
+    nonisolated var id: String { label }
     let label: String
     let isFilled: Bool
     var isSuggestion: Bool = false

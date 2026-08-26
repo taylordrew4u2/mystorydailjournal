@@ -112,15 +112,25 @@ final class LocationVisitMonitor: NSObject, CLLocationManagerDelegate, Observabl
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let accuracy = manager.accuracyAuthorization
         Task { @MainActor in
-            self.accuracyAuthorization = manager.accuracyAuthorization
+            self.accuracyAuthorization = accuracy
             self.startMonitoringVisitsIfAuthorized()
         }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
+        let arrivalDate = visit.arrivalDate
+        let departureDate = visit.departureDate
+        let latitude = visit.coordinate.latitude
+        let longitude = visit.coordinate.longitude
         Task { @MainActor in
-            await self.persist(visit: visit)
+            await self.persist(
+                arrivalDate: arrivalDate,
+                departureDate: departureDate,
+                latitude: latitude,
+                longitude: longitude
+            )
         }
     }
 
@@ -138,19 +148,19 @@ final class LocationVisitMonitor: NSObject, CLLocationManagerDelegate, Observabl
         }
     }
 
-    private func persist(visit: CLVisit) async {
-        let date = visit.arrivalDate != .distantPast ? visit.arrivalDate : visit.departureDate
+    private func persist(arrivalDate: Date, departureDate: Date, latitude: Double, longitude: Double) async {
+        let date = arrivalDate != .distantPast ? arrivalDate : departureDate
         guard date != .distantPast else { return }
 
         let placeName = await reverseGeocode(
-            latitude: visit.coordinate.latitude,
-            longitude: visit.coordinate.longitude,
+            latitude: latitude,
+            longitude: longitude,
             streetLevel: accuracyAuthorization == .fullAccuracy
         )
         let payload = VisitPayload(
             placeName: placeName,
-            latitude: visit.coordinate.latitude,
-            longitude: visit.coordinate.longitude,
+            latitude: latitude,
+            longitude: longitude,
             isFullAccuracy: accuracyAuthorization == .fullAccuracy
         )
 

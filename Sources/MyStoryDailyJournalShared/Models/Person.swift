@@ -10,6 +10,7 @@ final class Person {
     var id: UUID = UUID()
     var name: String = ""
     var createdAt: Date = Date.distantPast
+    var dayRecords: [DayRecord]? = []
 
     init(name: String, createdAt: Date = .now) {
         self.id = UUID()

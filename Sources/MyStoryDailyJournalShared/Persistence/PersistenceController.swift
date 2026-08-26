@@ -14,8 +14,7 @@ import SwiftData
 /// a real SDK — confirm current constraint/relationship support, and
 /// whether a single on-disk store safely serves both a CloudKit-configured
 /// process (the app) and a plain one (an extension without the iCloud
-/// entitlement) before shipping. This implementation gives every target
-/// the same `cloudKitDatabase` configuration to avoid that ambiguity.
+/// entitlement) before shipping.
 enum PersistenceController {
     static let cloudKitContainerIdentifier = "iCloud.com.mystorydailyjournal.app"
 
@@ -27,17 +26,60 @@ enum PersistenceController {
     ])
 
     static func makeContainer(inMemory: Bool = false) -> ModelContainer {
-        let configuration = inMemory
-            ? ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-            : ModelConfiguration(
-                schema: schema,
-                url: AppGroup.storeURL,
-                cloudKitDatabase: .private(cloudKitContainerIdentifier)
+        if inMemory {
+            return createContainer(
+                configuration: ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             )
+        }
+
+        let storeURL = AppGroup.storeURL
+        let cloudConfiguration = ModelConfiguration(
+            schema: schema,
+            url: storeURL,
+            cloudKitDatabase: .private(cloudKitContainerIdentifier)
+        )
+
+        do {
+            return try ModelContainer(for: schema, configurations: [cloudConfiguration])
+        } catch {
+            print("Failed to create CloudKit-backed ModelContainer, falling back to local store: \(error)")
+            return createPersistentLocalContainer(storeURL: storeURL)
+        }
+    }
+
+    private static func createPersistentLocalContainer(storeURL: URL) -> ModelContainer {
+        let configuration = ModelConfiguration(schema: schema, url: storeURL)
+        do {
+            return try ModelContainer(for: schema, configurations: [configuration])
+        } catch {
+            print("Failed to create local ModelContainer, moving aside store and retrying: \(error)")
+            moveAsideStoreFiles(at: storeURL)
+            return createContainer(
+                configuration: ModelConfiguration(schema: schema, url: storeURL)
+            )
+        }
+    }
+
+    private static func createContainer(configuration: ModelConfiguration) -> ModelContainer {
         do {
             return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }
+
+    private static func moveAsideStoreFiles(at storeURL: URL) {
+        let fileManager = FileManager.default
+        let suffix = ".failed-\(Int(Date().timeIntervalSince1970))"
+        let paths = [
+            storeURL,
+            URL(fileURLWithPath: storeURL.path + "-shm"),
+            URL(fileURLWithPath: storeURL.path + "-wal"),
+        ]
+
+        for url in paths where fileManager.fileExists(atPath: url.path) {
+            let destinationURL = URL(fileURLWithPath: url.path + suffix)
+            try? fileManager.moveItem(at: url, to: destinationURL)
         }
     }
 }
