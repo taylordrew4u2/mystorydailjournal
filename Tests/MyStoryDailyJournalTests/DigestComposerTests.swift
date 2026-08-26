@@ -107,6 +107,30 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("Rain, high around 18°, low around 9°"))
     }
 
+    func testComposeIncludesUserAttachments() {
+        let note = DaySignal(kind: .attachment, timestamp: makeDate())
+        note.setPayload(AttachmentPayload(kind: .note, text: "Ran into Maria at the market"))
+
+        let photo = DaySignal(kind: .attachment, timestamp: makeDate())
+        photo.setPayload(AttachmentPayload(kind: .photo, assetLocalIdentifier: "abc"))
+
+        let file = DaySignal(kind: .attachment, timestamp: makeDate())
+        file.setPayload(AttachmentPayload(kind: .file, fileName: "recipe.pdf"))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [note, photo, file])
+        XCTAssertTrue(text.contains("From my own notes: \"Ran into Maria at the market\""))
+        XCTAssertTrue(text.contains("Pinned a photo to this day"))
+        XCTAssertTrue(text.contains("Attached recipe.pdf"))
+    }
+
+    func testComposeIncludesSharedItems() {
+        let signal = DaySignal(kind: .sharedItem, timestamp: makeDate())
+        signal.setPayload(SharedItemPayload(title: "Trail idea", text: "Mount Tam loop next weekend", sourceApp: "Notes"))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("Saved \"Trail idea\": Mount Tam loop next weekend"))
+    }
+
     func testComposeUsesTheDaysOwnTimeZoneForTimeOfDay() {
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = TimeZone(identifier: "UTC")!

@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
+import UniformTypeIdentifiers
 
 /// The full entry experience for one day (§6). Freeform and guided are
 /// always both available and switchable, regardless of the wizard's default.
@@ -15,6 +17,11 @@ struct EntryView: View {
     @State private var candidateMode: WritingStyle?
     @State private var isGeneratingPastDay = false
     @State private var showRefinement = false
+    @State private var showAddNote = false
+    @State private var noteText = ""
+    @State private var showPhotoPicker = false
+    @State private var pickedPhotos: [PhotosPickerItem] = []
+    @State private var showFileImporter = false
 
     var body: some View {
         Group {
@@ -26,6 +33,33 @@ struct EntryView: View {
         }
         .navigationTitle(Text(date, format: .dateTime.month(.wide).day().year()))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button("Add a note", systemImage: "note.text") { showAddNote = true }
+                    Button("Add photos", systemImage: "photo.on.rectangle") { showPhotoPicker = true }
+                    Button("Attach a file", systemImage: "doc") { showFileImporter = true }
+                } label: {
+                    Image(systemName: "paperclip")
+                }
+            }
+        }
+        .alert("Add a note to this day", isPresented: $showAddNote) {
+            TextField("What should this day remember?", text: $noteText)
+            Button("Cancel", role: .cancel) { noteText = "" }
+            Button("Add") { addNote() }
+        } message: {
+            Text("Notes are woven into the day's story when it's regenerated.")
+        }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $pickedPhotos, matching: .images, photoLibrary: .shared())
+        .onChange(of: pickedPhotos) { _, items in
+            guard !items.isEmpty else { return }
+            addPhotos(items)
+            pickedPhotos = []
+        }
+        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
+            addFiles(result)
+        }
         .task {
             loadRecord()
             await capturePreciseLocationIfNeeded()
@@ -55,11 +89,24 @@ struct EntryView: View {
                         .font(.footnote)
                 }
                 .padding(.top, 4)
+
+                Button {
+                    regenerateDay()
+                } label: {
+                    if isGeneratingPastDay {
+                        ProgressView()
+                    } else {
+                        Label("Regenerate with the latest details", systemImage: "arrow.clockwise")
+                            .font(.footnote)
+                    }
+                }
+                .disabled(isGeneratingPastDay)
+                .padding(.top, 4)
             }
 
             if canGeneratePastDay(record) {
                 Button {
-                    generatePastDay()
+                    regenerateDay()
                 } label: {
                     if isGeneratingPastDay {
                         ProgressView()
@@ -152,11 +199,14 @@ struct EntryView: View {
         )
     }
 
-    /// On-demand counterpart to the automatic 30-day backfill: mines
-    /// historical Health/Calendar/Photos data for this one day, however far
-    /// back it is. Saves first so the blank record this view created is
-    /// visible to the engine's context, then reloads to show the digest.
-    private func generatePastDay() {
+    /// Generates or regenerates this day's digest on demand: first-time
+    /// generation for an empty past day, or a re-run on an auto-generated
+    /// day so newly attached notes/photos/files and the latest composer
+    /// detail get folded in. Never touches user-written days (the engine
+    /// refuses those). Saves first so anything this view created — the
+    /// blank record, fresh attachments — is visible to the engine's
+    /// context, then reloads to show the result.
+    private func regenerateDay() {
         guard !isGeneratingPastDay else { return }
         isGeneratingPastDay = true
         try? context.save()
@@ -171,6 +221,46 @@ struct EntryView: View {
                 isGeneratingPastDay = false
             }
         }
+    }
+
+    // MARK: - Attachments
+
+    /// Pins signals to this day in one batch, then — on a day the user
+    /// hasn't written themselves — regenerates once so the additions show
+    /// up in the story right away. On user-written days the attachments are
+    /// stored but the text is never touched.
+    private func attach(_ payloads: [AttachmentPayload]) {
+        guard let record, !payloads.isEmpty else { return }
+        for payload in payloads {
+            let signal = DaySignal(kind: .attachment, timestamp: date)
+            signal.setPayload(payload)
+            signal.dayRecord = record
+            context.insert(signal)
+            if record.signals == nil { record.signals = [] }
+            record.signals?.append(signal)
+        }
+        try? context.save()
+
+        if !record.isUserWritten {
+            regenerateDay()
+        }
+    }
+
+    private func addNote() {
+        let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        noteText = ""
+        guard !trimmed.isEmpty else { return }
+        attach([AttachmentPayload(kind: .note, text: trimmed)])
+    }
+
+    private func addPhotos(_ items: [PhotosPickerItem]) {
+        attach(items.map { AttachmentPayload(kind: .photo, assetLocalIdentifier: $0.itemIdentifier) })
+    }
+
+    /// Stores file *names* only — never contents (§10).
+    private func addFiles(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result else { return }
+        attach(urls.map { AttachmentPayload(kind: .file, fileName: $0.lastPathComponent) })
     }
 
     private var modeBinding: Binding<WritingStyle> {

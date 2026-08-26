@@ -36,7 +36,12 @@ final class DayRecord {
 
     var sourceRaw: String = DayRecordSource.blank.rawValue
     var bodyText: String = ""
-    var timeZoneIdentifier: String = TimeZone.current.identifier
+    /// Sourced from `NSTimeZone.default`, not `TimeZone.current`: the day
+    /// boundary in `date` is computed via `Calendar.current`, which honors
+    /// the app-default timezone, while `TimeZone.current` always reports the
+    /// system zone — mixing the two lets `date` and `timeZoneIdentifier`
+    /// describe different zones when they diverge.
+    var timeZoneIdentifier: String = NSTimeZone.default.identifier
 
     var createdAt: Date = Date.distantPast
     var editedAt: Date = Date.distantPast
@@ -55,7 +60,7 @@ final class DayRecord {
         source: DayRecordSource = .blank,
         bodyText: String = "",
         createdAt: Date = .now,
-        timeZoneIdentifier: String = TimeZone.current.identifier
+        timeZoneIdentifier: String = NSTimeZone.default.identifier
     ) {
         self.date = date
         self.sourceRaw = source.rawValue

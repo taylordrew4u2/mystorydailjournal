@@ -13,6 +13,7 @@ enum DaySignalKind: String, Codable, Sendable {
     case sharedItem
     case screenTime
     case fileWatch
+    case attachment
 }
 
 /// A single piece of evidence contributed toward a day's digest.

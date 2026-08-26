@@ -66,3 +66,22 @@ struct FileWatchPayload: Codable {
     var fileName: String
     var folderName: String
 }
+
+/// Something the user manually pinned to a day from the entry view — a
+/// note, photos/screenshots picked from the library, or a file. Survives
+/// digest regeneration (it's a pushed kind the engine never deletes) and
+/// gets folded into the regenerated text. Same storage rules as everything
+/// else (§10): note text the user typed themselves, asset identifiers, and
+/// file names — never file or image contents.
+struct AttachmentPayload: Codable {
+    enum Kind: String, Codable {
+        case note
+        case photo
+        case file
+    }
+
+    var kind: Kind
+    var text: String? = nil
+    var assetLocalIdentifier: String? = nil
+    var fileName: String? = nil
+}

@@ -12,7 +12,7 @@ enum DigestEngine {
     /// Extension or M8's ingestion intent, and watched-folder files via
     /// `WatchedFolderManager` — all independent write paths this engine
     /// only reads from when composing text.
-    private static let pushedSignalKinds: Set<DaySignalKind> = [.visit, .sharedItem, .fileWatch]
+    private static let pushedSignalKinds: Set<DaySignalKind> = [.visit, .sharedItem, .fileWatch, .attachment]
 
     @discardableResult
     static func generateDigestIfNeeded(for date: Date, in context: ModelContext) async -> DayRecord {

@@ -38,6 +38,12 @@ enum DigestComposer {
         if let fileWatchClause = fileWatchClause(signals) {
             clauses.append(fileWatchClause)
         }
+        if let sharedClause = sharedItemsClause(signals) {
+            clauses.append(sharedClause)
+        }
+        if let attachmentsClause = attachmentsClause(signals) {
+            clauses.append(attachmentsClause)
+        }
 
         guard clauses.count > 1 else {
             return "\(clauses[0]) No signals were available for this day."
@@ -230,6 +236,57 @@ enum DigestComposer {
             sentence += ", low around \(Int(low.rounded()))°"
         }
         return sentence + "."
+    }
+
+    /// Content the user pushed in from other apps (Share Extension or the
+    /// M8 ingestion intent). The text is the user's own selection, so it
+    /// belongs in the story verbatim (trimmed to a snippet).
+    private static func sharedItemsClause(_ signals: [DaySignal]) -> String? {
+        let items = signals
+            .filter { $0.kind == .sharedItem }
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { $0.payload(as: SharedItemPayload.self) }
+        guard !items.isEmpty else { return nil }
+
+        let described = items.map { item in
+            let snippet = item.text.count > 120
+                ? String(item.text.prefix(120)) + "…"
+                : item.text
+            if let title = item.title, !title.isEmpty {
+                return "Saved \"\(title)\": \(snippet)"
+            }
+            return "Saved a note: \"\(snippet)\""
+        }
+        return described.joined(separator: " ") + (described.last?.hasSuffix(".") == true ? "" : ".")
+    }
+
+    /// Things the user pinned to the day by hand from the entry view. Notes
+    /// go in verbatim — they're the most direct detail the user can give —
+    /// while photos and files contribute what's known about them.
+    private static func attachmentsClause(_ signals: [DaySignal]) -> String? {
+        let attachments = signals
+            .filter { $0.kind == .attachment }
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { $0.payload(as: AttachmentPayload.self) }
+        guard !attachments.isEmpty else { return nil }
+
+        var parts: [String] = []
+        for note in attachments.filter({ $0.kind == .note }).compactMap(\.text) {
+            parts.append("From my own notes: \"\(note)\"")
+        }
+        let photoCount = attachments.filter { $0.kind == .photo }.count
+        if photoCount > 0 {
+            parts.append(photoCount == 1
+                ? "Pinned a photo to this day"
+                : "Pinned \(photoCount) photos to this day")
+        }
+        let fileNames = attachments.filter { $0.kind == .file }.compactMap(\.fileName)
+        if !fileNames.isEmpty {
+            parts.append("Attached \(fileNames.joined(separator: ", "))")
+        }
+
+        guard !parts.isEmpty else { return nil }
+        return parts.joined(separator: ". ") + "."
     }
 
     /// Deterministic bucket for "when during the day," shared by every

@@ -2,75 +2,44 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDisplayName</key>
-	<string>My Story</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.mystorydailyjournal.app.digest-refresh</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>My Story</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>My Story uses Face ID to keep your journal private when app lock is turned on.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>My Story turns your spoken words into text for a journal entry, entirely on this device.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>My Story records your voice only to transcribe it into a journal entry; the audio itself is never saved.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>My Story reads your steps, distance, and workouts to fill in a quiet day's digest when you don't write one yourself.</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
-	<!-- Fallback for the pre-iOS-17 EventKit authorization path; iOS 17+ reads
-	     NSCalendarsFullAccessUsageDescription above instead. -->
-	<key>NSCalendarsUsageDescription</key>
-	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>My Story checks what you listened to that day to fill in a quiet day's digest when you don't write one yourself.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>My Story counts the photos you took each day to fill in a digest — it never reads or uploads the photos themselves.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>My Story notes the places you visit to fill in a day's digest when you don't write one yourself.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>My Story notes the places you visit, even when closed, to fill in a day's digest when you don't write one yourself.</string>
-	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
-	<dict>
-		<key>PreciseLocationForEntry</key>
-		<string>My Story uses your exact location, only when you ask, to note precisely where a moment happened.</string>
-	</dict>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>When you turn on nearby-people suggestions, My Story looks for other nearby phones running My Story to suggest tagging.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_mystory-nb._tcp</string>
-		<string>_mystory-nb._udp</string>
-	</array>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>When you turn on nearby-people suggestions, My Story uses Bluetooth to find other nearby phones running My Story.</string>
 	<key>CFBundleIcons</key>
 	<dict>
-		<key>CFBundlePrimaryIcon</key>
-		<dict>
-			<key>CFBundleIconName</key>
-			<string>AppIcon</string>
-		</dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
 			<key>AppIcon-forest</key>
 			<dict>
 				<key>CFBundleIconName</key>
 				<string>AppIcon-forest</string>
+			</dict>
+			<key>AppIcon-midnight</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-midnight</string>
+			</dict>
+			<key>AppIcon-moss</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-moss</string>
+			</dict>
+			<key>AppIcon-ochre</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-ochre</string>
+			</dict>
+			<key>AppIcon-plum</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon-plum</string>
 			</dict>
 			<key>AppIcon-rust</key>
 			<dict>
@@ -82,38 +51,23 @@
 				<key>CFBundleIconName</key>
 				<string>AppIcon-slate</string>
 			</dict>
-			<key>AppIcon-plum</key>
-			<dict>
-				<key>CFBundleIconName</key>
-				<string>AppIcon-plum</string>
-			</dict>
-			<key>AppIcon-ochre</key>
-			<dict>
-				<key>CFBundleIconName</key>
-				<string>AppIcon-ochre</string>
-			</dict>
-			<key>AppIcon-moss</key>
-			<dict>
-				<key>CFBundleIconName</key>
-				<string>AppIcon-moss</string>
-			</dict>
-			<key>AppIcon-midnight</key>
-			<dict>
-				<key>CFBundleIconName</key>
-				<string>AppIcon-midnight</string>
-			</dict>
+		</dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
 		</dict>
 	</dict>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.mystorydailyjournal.app.digest-refresh</string>
-	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>processing</string>
-		<string>fetch</string>
-		<string>remote-notification</string>
-	</array>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -124,6 +78,54 @@
 				<string>mystory</string>
 			</array>
 		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>My Story checks what you listened to that day to fill in a quiet day's digest when you don't write one yourself.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>When you turn on nearby-people suggestions, My Story uses Bluetooth to find other nearby phones running My Story.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_mystory-nb._tcp</string>
+		<string>_mystory-nb._udp</string>
+	</array>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>My Story uses Face ID to keep your journal private when app lock is turned on.</string>
+	<key>NSHealthClinicalHealthRecordsShareUsageDescription</key>
+	<string>My Story reads your steps, distance, and workouts to fill in a quiet day's digest when you don't write one yourself.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>My Story reads your steps, distance, and workouts to fill in a quiet day's digest when you don't write one yourself.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>When you turn on nearby-people suggestions, My Story looks for other nearby phones running My Story to suggest tagging.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>My Story notes the places you visit, even when closed, to fill in a day's digest when you don't write one yourself.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>PreciseLocationForEntry</key>
+		<string>My Story uses your exact location, only when you ask, to note precisely where a moment happened.</string>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>My Story notes the places you visit to fill in a day's digest when you don't write one yourself.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>My Story records your voice only to transcribe it into a journal entry; the audio itself is never saved.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>My Story counts the photos you took each day to fill in a digest — it never reads or uploads the photos themselves.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>My Story turns your spoken words into text for a journal entry, entirely on this device.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
@@ -140,7 +142,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 </dict>
 </plist>
