@@ -100,23 +100,27 @@ struct GuidedEntryView: View {
         } else {
             composedText = Self.compose(baseText: baseText, answers: answers)
             isReviewing = true
-            weaveRewriteIfRefining()
+            weaveAnswersIntoEntry()
         }
     }
 
-    /// The refinement flow's whole point (per the user's spec): after the
-    /// questions, the digest gets *rewritten* with the new details in the
-    /// right places, not just appended to. Best-effort — the plain
-    /// composition is already on screen as the fallback, and stays if the
-    /// on-device model can't run or the user went back to the questions.
-    private func weaveRewriteIfRefining() {
-        guard !baseText.isEmpty, !isWeavingRewrite else { return }
+    /// Every guided completion — a fresh entry or the refinement of an
+    /// auto-generated day — gets rewritten into one seamless entry with the
+    /// answers woven in where they belong, not stacked as paragraphs.
+    /// Best-effort: the plain composition is already on screen as the
+    /// fallback, and stays if the on-device model can't run or the user
+    /// went back to the questions.
+    private func weaveAnswersIntoEntry() {
+        guard !isWeavingRewrite else { return }
+        let pairs = zip(questionSet.prompts, answers).map { (question: $0, answer: $1) }
+        guard pairs.contains(where: { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            return
+        }
         isWeavingRewrite = true
 
-        let pairs = zip(questionSet.prompts, answers).map { (question: $0, answer: $1) }
-        let digest = baseText
+        let digest = baseText.isEmpty ? nil : baseText
         Task {
-            let woven = await DigestRewriter.integrateRefinements(digest: digest, questionsAndAnswers: pairs)
+            let woven = await DigestRewriter.weaveEntry(digest: digest, questionsAndAnswers: pairs)
             await MainActor.run {
                 if let woven, isReviewing {
                     composedText = woven

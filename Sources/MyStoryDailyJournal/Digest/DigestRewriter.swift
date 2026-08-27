@@ -33,14 +33,17 @@ enum DigestRewriter {
         #endif
     }
 
-    /// Weaves the guided refinement answers into the auto-generated digest,
-    /// producing one coherent first-person entry instead of a digest with
-    /// answers stapled on. Returns `nil` whenever the on-device model can't
-    /// help (unavailable hardware, thrown error, empty response) — the
-    /// caller keeps the plain digest-plus-answers composition as fallback.
-    /// Not gated behind `digestRewriteEnabled`: the user explicitly asked
-    /// for this rewrite by walking through the questions.
-    static func integrateRefinements(digest: String, questionsAndAnswers: [(question: String, answer: String)]) async -> String? {
+    /// Weaves guided-question answers into one coherent first-person entry:
+    /// with `digest` when refining an auto-generated day, or from the
+    /// answers alone for a fresh guided entry. The contract is *seamless*
+    /// integration — every answer, however short, offhand, or random, must
+    /// surface in the result, placed where it belongs in the story rather
+    /// than stapled on at the end. Returns `nil` whenever the on-device
+    /// model can't help (unavailable hardware, thrown error, empty
+    /// response) — the caller keeps the plain paragraph composition as
+    /// fallback. Not gated behind `digestRewriteEnabled`: the user
+    /// explicitly asked for this by walking through the questions.
+    static func weaveEntry(digest: String?, questionsAndAnswers: [(question: String, answer: String)]) async -> String? {
         let answered = questionsAndAnswers.filter {
             !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
@@ -51,19 +54,38 @@ enum DigestRewriter {
         let transcript = answered
             .map { "Q: \($0.question)\nA: \($0.answer)" }
             .joined(separator: "\n")
-        let prompt = """
-        Below is an automatically generated journal entry followed by the \
-        writer's own answers to follow-up questions. Rewrite everything as \
-        one natural, first-person journal entry, weaving the answers into \
-        the right places. Keep every fact from both the entry and the \
-        answers — people, places, event names, numbers — and do not invent \
-        anything that isn't stated. No emoji, plain text only.
 
-        Entry:
-        \(digest)
+        var prompt = """
+        Write one natural, first-person journal entry from the material \
+        below.
 
+        Rules:
+        - Every single answer must appear in the entry, including short, \
+        offhand, or seemingly unrelated remarks — nothing the writer said \
+        may be dropped, and each detail belongs where it naturally fits in \
+        the story, never tacked on at the end.
+        - Keep every fact exactly as given: people, places, event names, \
+        numbers, feelings. Do not invent anything that isn't stated.
+        - Never mention the questions, or that any of this came from a \
+        question-and-answer session. The result reads as if the writer \
+        wrote it in one sitting.
+        - Plain text only. No emoji, no headings, no lists.
+        """
+        if let digest, !digest.isEmpty {
+            prompt += """
+
+
+            What the phone observed about the day:
+            \(digest)
+            """
+        }
+        prompt += """
+
+
+        The writer's own answers:
         \(transcript)
         """
+
         do {
             guard case .available = SystemLanguageModel.default.availability else { return nil }
             let response = try await LanguageModelSession().respond(to: prompt)
