@@ -18,6 +18,43 @@ enum WritingStyle: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// The voice the on-device model writes in — applied to digest rewrites
+/// and guided-answer weaving alike. `natural` adds no instruction, so the
+/// model's default voice (and the rule-based fallback) are unchanged.
+enum WritingTone: String, CaseIterable, Identifiable, Codable {
+    case natural
+    case warm
+    case reflective
+    case upbeat
+    case matterOfFact
+    case poetic
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .natural: "Natural"
+        case .warm: "Warm"
+        case .reflective: "Reflective"
+        case .upbeat: "Upbeat"
+        case .matterOfFact: "Matter-of-fact"
+        case .poetic: "Poetic"
+        }
+    }
+
+    /// The sentence appended to rewrite prompts; nil adds nothing.
+    var promptInstruction: String? {
+        switch self {
+        case .natural: nil
+        case .warm: "Write in a warm, affectionate voice."
+        case .reflective: "Write in a calm, reflective, thoughtful voice."
+        case .upbeat: "Write in a bright, upbeat, energetic voice."
+        case .matterOfFact: "Write plainly and matter-of-factly, without flourishes."
+        case .poetic: "Write with a gently lyrical, poetic touch — without inventing any new facts."
+        }
+    }
+}
+
 /// A named sequence of 3-5 short reflective prompts, composed into the
 /// entry body once all are answered. See build spec §6.
 struct QuestionSet: Identifiable, Codable, Equatable {

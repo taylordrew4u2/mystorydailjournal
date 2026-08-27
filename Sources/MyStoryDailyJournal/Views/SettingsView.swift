@@ -27,6 +27,14 @@ struct SettingsView: View {
                         Text(style.displayName).tag(style)
                     }
                 }
+                Picker("Tone", selection: $settings.writingTone) {
+                    ForEach(WritingTone.allCases) { tone in
+                        Text(tone.displayName).tag(tone)
+                    }
+                }
+                Text("The voice used when entries are written or rewritten for you. The app also learns — on this phone only — who and what you write about most, so its writing sounds more like yours over time.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Reminder") {
@@ -472,6 +480,10 @@ struct YourDataView: View {
                 design makes it impossible for the app to store or export it.
                 • AI rewriting — runs entirely on this phone. Your words \
                 are never sent anywhere to be rewritten.
+                • Personalization — to write more like you, the app looks \
+                at your own recent entries (people, themes, entry length) \
+                each time it writes. This happens on this phone only, is \
+                recomputed on the spot, and is never stored or sent anywhere.
                 • Notes, photos, and files you attach — notes verbatim, \
                 photo identifiers, and file names only, never file contents.
                 """)

@@ -119,8 +119,9 @@ struct GuidedEntryView: View {
         isWeavingRewrite = true
 
         let digest = baseText.isEmpty ? nil : baseText
+        let profile = WriterProfile.summary(in: context)
         Task {
-            let woven = await DigestRewriter.weaveEntry(digest: digest, questionsAndAnswers: pairs)
+            let woven = await DigestRewriter.weaveEntry(digest: digest, questionsAndAnswers: pairs, writerProfile: profile)
             await MainActor.run {
                 if let woven, isReviewing {
                     composedText = woven

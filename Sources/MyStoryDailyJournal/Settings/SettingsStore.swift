@@ -28,6 +28,12 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(selectedQuestionSetID, forKey: Keys.questionSetID) }
     }
 
+    /// The voice the on-device model writes in (digest rewrites and
+    /// guided-answer weaving). Default `.natural` changes nothing.
+    @Published var writingTone: WritingTone {
+        didSet { defaults.set(writingTone.rawValue, forKey: Keys.writingTone) }
+    }
+
     @Published var customPrompts: [String] {
         didSet { defaults.set(customPrompts, forKey: Keys.customPrompts) }
     }
@@ -144,6 +150,7 @@ final class SettingsStore: ObservableObject {
         wizardCompleted = defaults.bool(forKey: Keys.wizardCompleted)
         writingStyle = WritingStyle(rawValue: defaults.string(forKey: Keys.writingStyle) ?? "") ?? .freeform
         selectedQuestionSetID = defaults.string(forKey: Keys.questionSetID) ?? QuestionSet.simpleRecap.id
+        writingTone = WritingTone(rawValue: defaults.string(forKey: Keys.writingTone) ?? "") ?? .natural
         customPrompts = defaults.stringArray(forKey: Keys.customPrompts) ?? []
         reminderMinutesSinceMidnight = defaults.object(forKey: Keys.reminderMinutes) as? Int ?? 21 * 60
         followUpIntervalMinutes = defaults.object(forKey: Keys.followUpMinutes) as? Int ?? 90
@@ -177,6 +184,7 @@ final class SettingsStore: ObservableObject {
         static let wizardCompleted = "settings.wizardCompleted"
         static let writingStyle = "settings.writingStyle"
         static let questionSetID = "settings.questionSetID"
+        static let writingTone = "settings.writingTone"
         static let customPrompts = "settings.customPrompts"
         static let reminderMinutes = "settings.reminderMinutesSinceMidnight"
         static let followUpMinutes = "settings.followUpIntervalMinutes"
