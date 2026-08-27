@@ -244,14 +244,15 @@ struct EntryView: View {
             && record.bodyText.isEmpty
     }
 
-    /// Signal-specific prompts so the answers sharpen what the digest
-    /// already knows about the day, rather than the generic starter sets.
+    /// Signal-specific prompts when the day has material to ask about
+    /// (places, events, photos); otherwise the question set the user chose
+    /// in onboarding/Settings — so that choice still means something.
     private func refinementQuestionSet(for record: DayRecord) -> QuestionSet {
-        QuestionSet(
-            id: "refinement",
-            name: "Make it more accurate",
-            prompts: DigestComposer.refinementQuestions(signals: record.signals ?? [])
-        )
+        let signalQuestions = DigestComposer.refinementQuestions(signals: record.signals ?? [])
+        // More than the two open-ended fallbacks means the day produced
+        // at least one specific question worth asking.
+        guard signalQuestions.count > 2 else { return settings.activeQuestionSet }
+        return QuestionSet(id: "refinement", name: "Guided questions", prompts: signalQuestions)
     }
 
     /// Generates or regenerates this day's digest on demand: first-time
