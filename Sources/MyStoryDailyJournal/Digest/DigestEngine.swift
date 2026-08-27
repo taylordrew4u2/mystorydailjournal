@@ -14,8 +14,14 @@ enum DigestEngine {
     /// only reads from when composing text.
     private static let pushedSignalKinds: Set<DaySignalKind> = [.visit, .sharedItem, .fileWatch, .attachment]
 
+    /// Caller-isolated (`nonisolated(nonsending)`) so the entry view can
+    /// pass its *own* main-actor context: the record on screen is then the
+    /// exact object this engine rewrites, and the UI updates the moment
+    /// `bodyText` changes — regenerating into a sibling context left the
+    /// visible record stale. Background callers (scheduler, backfill) are
+    /// unaffected; they keep running on their own executors.
     @discardableResult
-    static func generateDigestIfNeeded(for date: Date, in context: ModelContext) async -> DayRecord {
+    nonisolated(nonsending) static func generateDigestIfNeeded(for date: Date, in context: ModelContext) async -> DayRecord {
         let record = DayRecordRepository.record(for: date, in: context)
 
         // The day's bounds come from the timezone the day occurred in (the

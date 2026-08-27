@@ -203,23 +203,19 @@ struct EntryView: View {
     /// generation for an empty past day, or a re-run on an auto-generated
     /// day so newly attached notes/photos/files and the latest composer
     /// detail get folded in. Never touches user-written days (the engine
-    /// refuses those). Saves first so anything this view created — the
-    /// blank record, fresh attachments — is visible to the engine's
-    /// context, then reloads to show the result.
+    /// refuses those). Runs on this view's own context — the engine
+    /// rewrites the exact record on screen, so the new text appears the
+    /// moment it's composed.
     private func regenerateDay() {
         guard !isGeneratingPastDay else { return }
         isGeneratingPastDay = true
         try? context.save()
 
-        let container = context.container
-        let date = date
         Task {
-            await DigestEngine.generateDigestIfNeeded(for: date, in: ModelContext(container))
-            await MainActor.run {
-                record = nil
-                loadRecord()
-                isGeneratingPastDay = false
-            }
+            await DigestEngine.generateDigestIfNeeded(for: date, in: context)
+            record = nil
+            loadRecord()
+            isGeneratingPastDay = false
         }
     }
 
