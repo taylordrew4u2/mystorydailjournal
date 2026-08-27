@@ -38,7 +38,7 @@ struct TagChipRow: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(isActive ? Color.accentColor : Color.secondary.opacity(0.12))
-                .foregroundStyle(isActive ? Color.white : Color.primary)
+                .foregroundStyle(isActive ? Color(uiColor: .systemBackground) : Color.primary)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)

@@ -22,6 +22,7 @@ struct EntryView: View {
     @State private var showPhotoPicker = false
     @State private var pickedPhotos: [PhotosPickerItem] = []
     @State private var showFileImporter = false
+    @State private var showRegenerateOptions = false
 
     var body: some View {
         Group {
@@ -43,6 +44,31 @@ struct EntryView: View {
                     Image(systemName: "paperclip")
                 }
             }
+            // The always-there place to rebuild a day after adding new
+            // things — days with the user's own words confirm first.
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    if record?.isUserWritten == true {
+                        showRegenerateOptions = true
+                    } else {
+                        regenerateDay()
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .disabled(isGeneratingPastDay || record == nil)
+            }
+        }
+        .confirmationDialog("Rewrite this day?", isPresented: $showRegenerateOptions, titleVisibility: .visible) {
+            Button("Keep my words and add the new details") {
+                regenerateDay(force: true, preserveText: true)
+            }
+            Button("Start over from my phone's data", role: .destructive) {
+                regenerateDay(force: true, preserveText: false)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This day has your own writing. \u{201C}Keep my words\u{201D} weaves what you wrote into the rebuilt story, along with anything you've attached.")
         }
         .alert("Add a note to this day", isPresented: $showAddNote) {
             TextField("What should this day remember?", text: $noteText)
@@ -206,13 +232,17 @@ struct EntryView: View {
     /// refuses those). Runs on this view's own context — the engine
     /// rewrites the exact record on screen, so the new text appears the
     /// moment it's composed.
-    private func regenerateDay() {
+    private func regenerateDay(force: Bool = false, preserveText: Bool = true) {
         guard !isGeneratingPastDay else { return }
         isGeneratingPastDay = true
         try? context.save()
 
         Task {
-            await DigestEngine.generateDigestIfNeeded(for: date, in: context)
+            if force {
+                await DigestEngine.forceRegenerate(for: date, preservingText: preserveText, in: context)
+            } else {
+                await DigestEngine.generateDigestIfNeeded(for: date, in: context)
+            }
             record = nil
             loadRecord()
             isGeneratingPastDay = false

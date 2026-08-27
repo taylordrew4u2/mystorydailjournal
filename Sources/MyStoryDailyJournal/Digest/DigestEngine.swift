@@ -120,6 +120,46 @@ enum DigestEngine {
         await MainActor.run { settings.lastDigestCheckDate = yesterday }
     }
 
+    /// The user's explicit override of the "never overwrite" guard, for the
+    /// always-available regenerate button: rebuilds even a user-written day.
+    /// By default the user's existing words are pinned to the day as a note
+    /// attachment first, so they come back woven into the regenerated story
+    /// instead of vanishing; `preservingText: false` (a confirmed,
+    /// destructive choice in the UI) starts the day over from signals alone.
+    @discardableResult
+    nonisolated(nonsending) static func forceRegenerate(
+        for date: Date,
+        preservingText: Bool = true,
+        in context: ModelContext
+    ) async -> DayRecord {
+        let record = DayRecordRepository.record(for: date, in: context)
+
+        if record.isUserWritten {
+            let existing = record.bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if preservingText, !existing.isEmpty {
+                // Don't pin the same words twice when the user regenerates
+                // repeatedly — one note per distinct text.
+                let alreadyPinned = (record.signals ?? []).contains { signal in
+                    signal.kind == .attachment
+                        && signal.payload(as: AttachmentPayload.self)?.text == existing
+                }
+                if !alreadyPinned {
+                    let note = DaySignal(kind: .attachment, timestamp: record.date)
+                    note.setPayload(AttachmentPayload(kind: .note, text: existing))
+                    note.dayRecord = record
+                    context.insert(note)
+                    if record.signals == nil { record.signals = [] }
+                    record.signals?.append(note)
+                }
+            }
+            record.bodyText = ""
+            record.source = .blank
+            try? context.save()
+        }
+
+        return await generateDigestIfNeeded(for: date, in: context)
+    }
+
     /// How far back a fresh install reaches when reconstructing days the app
     /// never observed live. Health, Calendar, and Photos all answer
     /// historical queries, so a brand-new install can still tell the story

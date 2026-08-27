@@ -129,7 +129,7 @@ private struct Chip: View, Identifiable {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(isFilled ? Color.accentColor : Color.secondary.opacity(isSuggestion ? 0.08 : 0.12))
-                .foregroundStyle(isFilled ? Color.white : Color.primary)
+                .foregroundStyle(isFilled ? Color(uiColor: .systemBackground) : Color.primary)
                 .overlay {
                     if isSuggestion {
                         Capsule().strokeBorder(Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [3]))
