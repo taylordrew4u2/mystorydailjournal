@@ -6,23 +6,24 @@ import UIKit
 /// skipping this." Lands here (M8) rather than earlier, since it needs
 /// `IngestSharedContentIntent` to exist first.
 struct AutomationsStep: View {
-    @State private var expandedTemplate: String?
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Optional automations")
+                Text("Optional automation")
                     .font(.title3.weight(.semibold))
                     .padding(.top, 24)
 
-                Text("These pull content from Notes or Messages into My Story on their own, entirely through your own Shortcuts app. Skip this if you'd rather just write.")
+                Text("One optional extra: pull what you write in Apple Notes into My Story automatically, entirely through your own Shortcuts app. Skip this if you'd rather just write.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
                 noSetupNeededCard
 
                 templateCard(.notesDailyPull)
-                templateCard(.messageTrigger)
+
+                Text("Prefer something simpler? In the Notes app, tap Share on any note and choose \"My Story\" — same result, one note at a time, no setup at all.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal)
         }
@@ -51,20 +52,15 @@ struct AutomationsStep: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
-            Button(expandedTemplate == template.name ? "Hide steps" : "Show me every tap") {
-                expandedTemplate = expandedTemplate == template.name ? nil : template.name
-            }
-            .font(.footnote)
-
-            if expandedTemplate == template.name {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(template.manualSteps.enumerated()), id: \.offset) { index, step in
-                        Text("\(index + 1). \(step)")
-                            .font(.caption)
-                    }
+            // Every tap, always on screen — hiding setup steps behind a
+            // disclosure was itself a source of confusion.
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(template.manualSteps.enumerated()), id: \.offset) { index, step in
+                    Text("\(index + 1). \(step)")
+                        .font(.caption)
                 }
-                .padding(.top, 4)
             }
+            .padding(.top, 4)
 
             // Opening Shortcuts closes this app and takes the steps with it,
             // so they go to the clipboard first — pasteable into any text

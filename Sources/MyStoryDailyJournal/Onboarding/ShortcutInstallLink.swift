@@ -2,8 +2,9 @@ import Foundation
 import UIKit
 
 /// A pre-built automation the app can offer to install (§3, §7 step 5):
-/// a Notes daily-pull, or a Messages per-sender trigger. Both hand their
-/// result to `IngestSharedContentIntent`.
+/// a Notes daily-pull that hands its result to `IngestSharedContentIntent`.
+/// (A Messages per-sender trigger existed here too, but was cut — not
+/// worth its setup burden.)
 ///
 /// The real, shipped mechanism is an "Install automation" button that
 /// opens Shortcuts pre-filled via a `.shortcut` link (a signed file
@@ -33,30 +34,16 @@ struct ShortcutTemplate {
 
     static let notesDailyPull = ShortcutTemplate(
         name: "Pull today's Notes",
-        summary: "Runs once a day and hands anything you wrote in Notes today to My Story.",
+        summary: "Runs once a day, all by itself, and adds anything you wrote in Apple Notes that day to My Story.",
         manualSteps: [
-            "Open the Shortcuts app (already on your iPhone — swipe down on the home screen and type \"Shortcuts\" if you can't find it).",
-            "Tap \"Automation\" in the bar at the bottom of the screen, then tap the + in the top-right corner.",
-            "Tap \"Time of Day.\" Pick a time (9:00 PM works well), make sure \"Daily\" is selected, choose \"Run Immediately,\" then tap \"Next.\"",
-            "Tap \"New Blank Automation,\" then \"Add Action.\" Type \"Find Notes\" in the search box and tap it in the results.",
-            "In the Find Notes box, tap \"Add Filter\" and set it to Created Date → is today.",
-            "Tap the search bar again, type \"My Story,\" and tap \"Add to My Story.\" Tap the pale text bubble inside it and choose the \"Notes\" variable, so the notes it found are what get logged.",
-            "Tap \"Done\" in the top corner. You're finished — it now runs by itself every day.",
-        ],
-        installURL: nil
-    )
-
-    static let messageTrigger = ShortcutTemplate(
-        name: "Log messages from someone",
-        summary: "Runs the moment a message arrives from senders you pick, and logs it immediately.",
-        manualSteps: [
-            "Open the Shortcuts app (already on your iPhone — swipe down on the home screen and type \"Shortcuts\" if you can't find it).",
-            "Tap \"Automation\" in the bar at the bottom of the screen, then tap the + in the top-right corner.",
-            "Tap \"Message.\" Next to \"Sender,\" tap \"Choose\" and pick the specific people whose messages you want journaled (don't leave it as any message).",
-            "Choose \"Run Immediately,\" then tap \"Next.\"",
-            "Tap \"New Blank Automation,\" then \"Add Action.\" Type \"My Story\" in the search box and tap \"Add to My Story.\"",
-            "Tap the pale text bubble inside it and choose \"Shortcut Input,\" so the incoming message's text is what gets logged.",
-            "Tap \"Done\" in the top corner. From now on, messages from those people are logged the moment they arrive.",
+            "Open the Shortcuts app. (Can't find it? Swipe down on your home screen and type Shortcuts.)",
+            "Tap Automation at the bottom of the screen, then tap + in the top corner.",
+            "Tap Time of Day. Set it to Daily, pick a time like 9:00 PM, select Run Immediately, and tap Next.",
+            "Tap New Blank Automation, then tap Add Action.",
+            "Search for Find Notes and tap it. Then tap Add Filter inside it and set: Created Date → is → Today.",
+            "Tap Add Action again, search for My Story, and tap Add to My Story.",
+            "Inside Add to My Story, tap the light-blue text field and pick Notes — that connects the notes it found to your journal.",
+            "Tap Done. That's everything — from now on it runs every day without you touching it.",
         ],
         installURL: nil
     )
