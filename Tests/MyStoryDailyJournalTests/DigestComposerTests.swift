@@ -155,6 +155,14 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("March 5"))
     }
 
+    func testRefinementQuestionsAskWhatIsAtAnAddress() {
+        let visit = DaySignal(kind: .visit, timestamp: makeDate())
+        visit.setPayload(VisitPayload(placeName: "480 Larkin Street", latitude: 0, longitude: 0, isFullAccuracy: true))
+
+        let questions = DigestComposer.refinementQuestions(signals: [visit])
+        XCTAssertTrue(questions.contains("What's at 480 Larkin Street?"))
+    }
+
     func testRefinementQuestionsUseEventLocationAndPhotoPlace() {
         let event = DaySignal(kind: .calendar, timestamp: makeDate())
         event.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: [], location: "Room B"))

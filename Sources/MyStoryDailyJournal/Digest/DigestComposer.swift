@@ -64,8 +64,14 @@ enum DigestComposer {
             .filter { $0.kind == .visit }
             .sorted { $0.timestamp < $1.timestamp }
             .compactMap { $0.payload(as: VisitPayload.self) }
-        if let firstVisit = visits.first {
-            questions.append("You spent time at \(firstVisit.placeName) — what were you doing there?")
+        for visit in visits.prefix(2) {
+            // A bare street address (digits in the name) means the geocoder
+            // didn't know the venue — ask what the place actually is.
+            if visit.placeName.contains(where: \.isNumber) {
+                questions.append("What's at \(visit.placeName)?")
+            } else {
+                questions.append("You spent time at \(visit.placeName) — what were you doing there?")
+            }
         }
 
         let events = signals

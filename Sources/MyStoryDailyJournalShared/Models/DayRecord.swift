@@ -36,6 +36,12 @@ final class DayRecord {
 
     var sourceRaw: String = DayRecordSource.blank.rawValue
     var bodyText: String = ""
+
+    /// The Notes panel's scratchpad: whatever the user jots for this day.
+    /// Never cleared or consumed — it stays put, and the digest engine
+    /// weaves its contents into `bodyText` whenever the day is generated.
+    var notesText: String = ""
+
     /// Sourced from `NSTimeZone.default`, not `TimeZone.current`: the day
     /// boundary in `date` is computed via `Calendar.current`, which honors
     /// the app-default timezone, while `TimeZone.current` always reports the
