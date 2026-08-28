@@ -84,21 +84,29 @@ enum DigestRewriter {
     /// answers alone for a fresh guided entry. The contract is *seamless*
     /// integration — every answer, however short, offhand, or random, must
     /// surface in the result, placed where it belongs in the story rather
-    /// than stapled on at the end. Returns `nil` whenever the on-device
+    /// than stapled on at the end, and each answer's stated feeling has to
+    /// color how that moment is told. Returns `nil` whenever the on-device
     /// model can't help (unavailable hardware, thrown error, empty
     /// response) — the caller keeps the plain paragraph composition as
     /// fallback. Not gated behind `digestRewriteEnabled`: the user
     /// explicitly asked for this by walking through the questions.
-    static func weaveEntry(digest: String?, questionsAndAnswers: [(question: String, answer: String)], writerProfile: String? = nil) async -> String? {
-        let answered = questionsAndAnswers.filter {
-            !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
+    static func weaveEntry(digest: String?, responses: [GuidedResponse], writerProfile: String? = nil) async -> String? {
+        let answered = responses.filter(\.isAnswered)
         guard !answered.isEmpty else { return nil }
 
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, *) else { return nil }
         let transcript = answered
-            .map { "Q: \($0.question)\nA: \($0.answer)" }
+            .map { response in
+                var lines = ["Q: \(response.question)"]
+                if !response.trimmedAnswer.isEmpty {
+                    lines.append("A: \(response.trimmedAnswer)")
+                }
+                if !response.trimmedFeeling.isEmpty {
+                    lines.append("How it felt: \(response.trimmedFeeling)")
+                }
+                return lines.joined(separator: "\n")
+            }
             .joined(separator: "\n")
 
         var prompt = """
@@ -112,6 +120,11 @@ enum DigestRewriter {
         the story, never tacked on at the end.
         - Keep every fact exactly as given: people, places, event names, \
         numbers, feelings. Do not invent anything that isn't stated.
+        - Where the writer said how something felt, let that feeling shape \
+        how that part of the day is told — in the writing itself, never as \
+        a label or a separate line about emotions.
+        - Places have names: if the material gives a venue name for a \
+        street address, use the name and never write the address.
         - Never mention the questions, or that any of this came from a \
         question-and-answer session. The result reads as if the writer \
         wrote it in one sitting.

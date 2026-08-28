@@ -4,9 +4,17 @@ import SwiftData
 /// A short sequence of prompts, one at a time, composed into the entry body
 /// only after the user reviews and can lightly edit the result. Never saves
 /// silently (§6, acceptance criteria).
+///
+/// Every question carries the day's own material with it — the photos taken
+/// around that moment, the names already known — and every question is
+/// followed by "how did that feel?", so the entry ends up carrying the
+/// writer's emotional response and not just the facts. Finishing the
+/// questions applies what was said to the whole day automatically
+/// (`GuidedAnswerApplier`): addresses become place names, names become
+/// tagged people, and the questions and answers are kept in the day's Notes.
 struct GuidedEntryView: View {
     @Bindable var record: DayRecord
-    let questionSet: QuestionSet
+    let questions: [GuidedQuestion]
     /// When non-empty (the refinement flow on an auto-generated day), the
     /// composed entry starts from this text and the answers follow it, so
     /// the digest's facts survive alongside the user's own words.
@@ -16,54 +24,163 @@ struct GuidedEntryView: View {
     @Environment(\.modelContext) private var context
 
     @State private var answers: [String]
+    @State private var feelings: [String]
+    @State private var chosenNames: [[String]]
     @State private var currentIndex = 0
     @State private var isReviewing = false
     @State private var composedText = ""
     @State private var isWeavingRewrite = false
+    @State private var responses: [GuidedResponse] = []
+    /// The day's own camera roll, shown with any question that doesn't
+    /// already carry photos of its own — looking at the day is half of
+    /// remembering it.
+    @State private var dayPhotos: [String] = []
 
-    init(record: DayRecord, questionSet: QuestionSet, baseText: String = "", onSave: @escaping () -> Void = {}) {
+    init(
+        record: DayRecord,
+        questions: [GuidedQuestion],
+        baseText: String = "",
+        onSave: @escaping () -> Void = {}
+    ) {
         self.record = record
-        self.questionSet = questionSet
+        self.questions = questions
         self.baseText = baseText
         self.onSave = onSave
-        _answers = State(initialValue: Array(repeating: "", count: questionSet.prompts.count))
+        _answers = State(initialValue: Array(repeating: "", count: questions.count))
+        _feelings = State(initialValue: Array(repeating: "", count: questions.count))
+        _chosenNames = State(initialValue: Array(repeating: [], count: questions.count))
     }
+
+    /// Short words for the follow-up under every question — a tap is enough
+    /// to give the entry a tone, and anything more specific can be typed.
+    private static let feelingChips = [
+        "good", "happy", "calm", "grateful", "tired", "stressed", "sad", "excited", "proud",
+    ]
 
     var body: some View {
         if isReviewing {
             reviewStep
+        } else if questions.isEmpty {
+            ContentUnavailableView("No questions for this day", systemImage: "questionmark")
         } else {
             promptStep
         }
     }
 
+    private var question: GuidedQuestion {
+        questions[min(currentIndex, questions.count - 1)]
+    }
+
     private var promptStep: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Question \(currentIndex + 1) of \(questionSet.prompts.count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Question \(currentIndex + 1) of \(questions.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-            Text(questionSet.prompts[currentIndex])
-                .font(.title3)
+                    if !shownPhotos.isEmpty {
+                        DayPhotoStrip(assetIdentifiers: shownPhotos)
+                    }
 
-            TextField("", text: $answers[currentIndex], axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(3...6)
+                    Text(question.text)
+                        .font(.title3)
 
-            Spacer()
+                    TextField("", text: $answers[currentIndex], axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(3...6)
+
+                    if !question.nameSuggestions.isEmpty {
+                        nameSuggestionRow
+                    }
+
+                    if let feelingPrompt = question.feelingPrompt {
+                        feelingSection(prompt: feelingPrompt)
+                    }
+                }
+                .padding()
+            }
 
             HStack {
                 if currentIndex > 0 {
                     Button("Back") { currentIndex -= 1 }
                 }
                 Spacer()
-                Button(currentIndex == questionSet.prompts.count - 1 ? "Continue" : "Next") {
+                Button(currentIndex == questions.count - 1 ? "Continue" : "Next") {
                     advance()
                 }
                 .buttonStyle(.borderedProminent)
             }
+            .padding()
         }
-        .padding()
+        .task {
+            guard dayPhotos.isEmpty else { return }
+            dayPhotos = await DayPhotoLibrary.assetIdentifiers(
+                for: record.date,
+                timeZoneIdentifier: record.timeZoneIdentifier
+            )
+        }
+    }
+
+    /// A question's own photos when it has them — the shots from that visit
+    /// or that moment — and otherwise the day's camera roll.
+    private var shownPhotos: [String] {
+        question.photoAssetIdentifiers.isEmpty ? dayPhotos : question.photoAssetIdentifiers
+    }
+
+    /// Names the day already knows — calendar attendees, people tagged on
+    /// it. Tapping one writes it into the answer and tags them on the day
+    /// when the questions are finished.
+    private var nameSuggestionRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Who?")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(question.nameSuggestions, id: \.self) { name in
+                        chip(name, isSelected: chosenNames[currentIndex].contains(name)) {
+                            toggleName(name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func feelingSection(prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(prompt)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Self.feelingChips, id: \.self) { feeling in
+                        chip(feeling, isSelected: containsFeeling(feeling)) {
+                            toggleFeeling(feeling)
+                        }
+                    }
+                }
+            }
+
+            TextField("In your own words", text: $feelings[currentIndex], axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(1...3)
+        }
+    }
+
+    private func chip(_ label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.footnote.weight(.medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12))
+                .foregroundStyle(isSelected ? Color(uiColor: .systemBackground) : Color.primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private var reviewStep: some View {
@@ -94,13 +211,71 @@ struct GuidedEntryView: View {
         .padding()
     }
 
+    private func toggleName(_ name: String) {
+        if let index = chosenNames[currentIndex].firstIndex(of: name) {
+            chosenNames[currentIndex].remove(at: index)
+            return
+        }
+        chosenNames[currentIndex].append(name)
+        // The tap writes the name into the answer too, so the finished
+        // entry says it rather than just carrying a hidden tag.
+        let answer = answers[currentIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+        guard answer.range(of: name, options: .caseInsensitive) == nil else { return }
+        answers[currentIndex] = answer.isEmpty ? name : answer + " " + name
+    }
+
+    private func containsFeeling(_ feeling: String) -> Bool {
+        feelings[currentIndex]
+            .split(separator: ",")
+            .contains { $0.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(feeling) == .orderedSame }
+    }
+
+    private func toggleFeeling(_ feeling: String) {
+        var parts = feelings[currentIndex]
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        if let index = parts.firstIndex(where: { $0.caseInsensitiveCompare(feeling) == .orderedSame }) {
+            parts.remove(at: index)
+        } else {
+            parts.append(feeling)
+        }
+        feelings[currentIndex] = parts.joined(separator: ", ")
+    }
+
     private func advance() {
-        if currentIndex < questionSet.prompts.count - 1 {
+        if currentIndex < questions.count - 1 {
             currentIndex += 1
         } else {
-            composedText = Self.compose(baseText: baseText, answers: answers)
-            isReviewing = true
-            weaveAnswersIntoEntry()
+            finish()
+        }
+    }
+
+    /// Applies the answers to the day, then shows the composed entry. The
+    /// application isn't a separate confirmation step — answering the
+    /// questions *is* the confirmation.
+    private func finish() {
+        let outcome = GuidedAnswerApplier.apply(
+            questions: questions,
+            responses: currentResponses,
+            chosenNames: chosenNames,
+            baseText: baseText,
+            to: record,
+            in: context
+        )
+        responses = outcome.responses
+        composedText = Self.compose(baseText: outcome.baseText, responses: outcome.responses)
+        isReviewing = true
+        weaveAnswersIntoEntry(outcome.responses, baseText: outcome.baseText)
+    }
+
+    private var currentResponses: [GuidedResponse] {
+        questions.enumerated().map { index, question in
+            GuidedResponse(
+                question: question.text,
+                answer: answers[index],
+                feeling: feelings[index]
+            )
         }
     }
 
@@ -110,18 +285,16 @@ struct GuidedEntryView: View {
     /// Best-effort: the plain composition is already on screen as the
     /// fallback, and stays if the on-device model can't run or the user
     /// went back to the questions.
-    private func weaveAnswersIntoEntry() {
+    private func weaveAnswersIntoEntry(_ responses: [GuidedResponse], baseText: String) {
         guard !isWeavingRewrite else { return }
-        let pairs = zip(questionSet.prompts, answers).map { (question: $0, answer: $1) }
-        guard pairs.contains(where: { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
-            return
-        }
+        let answered = responses.filter(\.isAnswered)
+        guard !answered.isEmpty else { return }
         isWeavingRewrite = true
 
         let digest = baseText.isEmpty ? nil : baseText
         let profile = WriterProfile.summary(in: context)
         Task {
-            let woven = await DigestRewriter.weaveEntry(digest: digest, questionsAndAnswers: pairs, writerProfile: profile)
+            let woven = await DigestRewriter.weaveEntry(digest: digest, responses: answered, writerProfile: profile)
             await MainActor.run {
                 if let woven, isReviewing {
                     composedText = woven
@@ -131,8 +304,19 @@ struct GuidedEntryView: View {
         }
     }
 
+    /// The diary panel gets the woven entry; the Notes panel keeps the
+    /// questions, answers and feelings it was woven from, alongside
+    /// whatever the writer had already jotted there.
     private func save() {
         record.bodyText = composedText
+        record.notesText = GuidedAnswerLog.appending(
+            GuidedAnswerLog.block(
+                date: record.date,
+                responses: responses,
+                timeZoneIdentifier: record.timeZoneIdentifier
+            ),
+            to: record.notesText
+        )
         record.source = record.source == .autoGenerated ? .converted : .userWritten
         record.editedAt = .now
         try? context.save()
@@ -156,5 +340,11 @@ struct GuidedEntryView: View {
         return [trimmedBase, answerText]
             .filter { !$0.isEmpty }
             .joined(separator: "\n\n")
+    }
+
+    /// The fallback composition when the on-device model can't run: answers
+    /// as paragraphs, each keeping the feeling that came with it.
+    static func compose(baseText: String, responses: [GuidedResponse]) -> String {
+        compose(baseText: baseText, answers: responses.map(\.sentence))
     }
 }

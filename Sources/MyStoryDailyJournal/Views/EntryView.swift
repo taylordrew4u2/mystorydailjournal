@@ -179,9 +179,14 @@ struct EntryView: View {
             NavigationStack {
                 GuidedEntryView(
                     record: record,
-                    questionSet: refinementQuestionSet(for: record),
+                    questions: guidedQuestions(for: record),
                     baseText: record.bodyText
                 ) {
+                    // The guided flow has already woven its answers into the
+                    // diary and logged them into the notes; re-snapshotting
+                    // stops the panel switch below from rebuilding the day a
+                    // second time over the same material.
+                    notesSnapshot = record.notesText
                     showRefinement = false
                     panel = .diary
                 }
@@ -245,14 +250,18 @@ struct EntryView: View {
     }
 
     /// Signal-specific prompts when the day has material to ask about
-    /// (places, events, photos); otherwise the question set the user chose
-    /// in onboarding/Settings — so that choice still means something.
-    private func refinementQuestionSet(for record: DayRecord) -> QuestionSet {
-        let signalQuestions = DigestComposer.refinementQuestions(signals: record.signals ?? [])
+    /// (places, events, the photos themselves and the faces in them);
+    /// otherwise the question set the user chose in onboarding/Settings —
+    /// so that choice still means something.
+    private func guidedQuestions(for record: DayRecord) -> [GuidedQuestion] {
+        let signalQuestions = GuidedQuestionBuilder.questions(
+            signals: record.signals ?? [],
+            timeZoneIdentifier: record.timeZoneIdentifier
+        )
         // More than the two open-ended fallbacks means the day produced
         // at least one specific question worth asking.
-        guard signalQuestions.count > 2 else { return settings.activeQuestionSet }
-        return QuestionSet(id: "refinement", name: "Guided questions", prompts: signalQuestions)
+        guard signalQuestions.count > 2 else { return GuidedQuestion.from(settings.activeQuestionSet) }
+        return signalQuestions
     }
 
     /// Generates or regenerates this day's digest on demand: first-time
