@@ -85,7 +85,11 @@ milestone the build spec describes, including the one it labels deferred.
   filtered out) via `EKEventStore`; attendee names ride along for M5's
   suggestion chips but are never written anywhere unconfirmed.
 - **`PhotosSignalProvider`** — photo/screenshot counts via `PHAsset`
-  fetches; stores local identifiers only, never image bytes.
+  fetches, plus what each asset's own metadata says: capture time,
+  geotagged place, favorite status, and — read on-device by Vision
+  (`PhotoContentAnalyzer`) — how many faces are in the frame and a label
+  or two for what the shot is of. Stores local identifiers and those
+  derived summaries only, never image bytes.
 - **`LocationVisitMonitor` + `LocationSignalProvider`** — place-level
   `CLVisit`s captured live (there's no API to pull visit history on
   demand) and written straight to the day they occurred, with cached
@@ -263,6 +267,33 @@ each piece more speculative than the last:
 None of M10 is missing by oversight — the build spec explicitly sequences
 it last and calls it out as deferred, which this follows literally: it's
 the final milestone, built after everything else was solid.
+
+### Guided questions that make the day more specific
+
+Answering a guided question doesn't just add a paragraph — it changes what
+the day knows, with nothing to confirm afterwards:
+
+- **Every unnamed place gets asked about**, and the answer renames it
+  everywhere: the entry text, the day's stored signals, and a device-local
+  alias store (`PlaceAliasStore`), so "480 Larkin Street" is written as
+  "Blue Bottle" on that day and on every future day at that address. A
+  shrug ("no idea") leaves the address alone.
+- **The photos come with the question.** Each place, event and photo
+  question carries the shots taken around that moment, and questions
+  without any of their own show the day's camera roll — so the writer is
+  looking at the day while describing it.
+- **Faces are counted, never identified.** Vision's face count is enough to
+  describe who was in frame ("two people in the frame") and to ask who they
+  were; a name only lands on a day because the writer typed it or tapped it
+  from the day's own suggestions. Confirmed names are tagged on the day and
+  recorded on the photo, so later regenerations say "with Dana in the
+  frame" instead.
+- **Every question asks how it felt**, in a follow-up under the answer, and
+  the feeling travels with that answer into the weave — shaping how that
+  part of the day is told rather than being appended as a mood line.
+- **The Notes panel keeps the raw material.** The diary panel gets the
+  woven entry; the notes keep every question, answer and feeling next to
+  whatever was already jotted there, appended and never consumed.
 
 ## Building
 

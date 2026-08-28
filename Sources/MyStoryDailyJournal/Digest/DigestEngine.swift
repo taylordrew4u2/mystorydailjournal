@@ -84,7 +84,10 @@ enum DigestEngine {
         } else {
             let woven = await DigestRewriter.weaveEntry(
                 digest: ruleBasedText,
-                questionsAndAnswers: [(question: "Everything the writer jotted in their notes for this day", answer: jotted)],
+                responses: [GuidedResponse(
+                    question: "Everything the writer jotted in their notes for this day",
+                    answer: jotted
+                )],
                 writerProfile: WriterProfile.summary(in: context)
             )
             record.bodyText = woven ?? (ruleBasedText + "\n\nFrom my notes: \(jotted)")

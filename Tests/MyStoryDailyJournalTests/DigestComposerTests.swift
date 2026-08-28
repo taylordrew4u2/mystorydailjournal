@@ -99,6 +99,62 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("Took one photo around Golden Gate Park in the afternoon"))
     }
 
+    func testPhotosClauseDescribesTheFacesItCounted() {
+        let signal = DaySignal(kind: .photo, timestamp: makeDate())
+        signal.setPayload(PhotoPayload(assetLocalIdentifier: "abc", isScreenshot: false, faceCount: 2))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("with two people in the frame"))
+    }
+
+    func testPhotosClauseNamesPeopleOnceTheyAreConfirmed() {
+        let signal = DaySignal(kind: .photo, timestamp: makeDate())
+        signal.setPayload(PhotoPayload(
+            assetLocalIdentifier: "abc",
+            isScreenshot: false,
+            faceCount: 2,
+            personNames: ["Dana", "Sam"]
+        ))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [signal])
+        XCTAssertTrue(text.contains("with Dana and Sam in the frame"))
+        XCTAssertFalse(text.contains("two people in the frame"))
+    }
+
+    func testPhotosClauseSaysWhatTheShotsWereOf() {
+        let first = DaySignal(kind: .photo, timestamp: makeDate())
+        first.setPayload(PhotoPayload(assetLocalIdentifier: "a", isScreenshot: false, sceneLabels: ["coffee", "pastry"]))
+        let second = DaySignal(kind: .photo, timestamp: makeDate())
+        second.setPayload(PhotoPayload(assetLocalIdentifier: "b", isScreenshot: false, sceneLabels: ["coffee"]))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [first, second])
+        XCTAssertTrue(text.contains("mostly of coffee and pastry"))
+    }
+
+    func testPhotosClauseSpansTheDayWhenTheCameraCameOutTwice() {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 3
+        components.day = 4
+        components.hour = 8
+        let calendar = Calendar(identifier: .gregorian)
+        let morning = calendar.date(from: components)!
+        components.hour = 19
+        let evening = calendar.date(from: components)!
+
+        let first = DaySignal(kind: .photo, timestamp: morning)
+        first.setPayload(PhotoPayload(assetLocalIdentifier: "a", isScreenshot: false))
+        let second = DaySignal(kind: .photo, timestamp: evening)
+        second.setPayload(PhotoPayload(assetLocalIdentifier: "b", isScreenshot: false))
+
+        let text = DigestComposer.compose(
+            date: morning,
+            signals: [first, second],
+            timeZoneIdentifier: calendar.timeZone.identifier
+        )
+        XCTAssertTrue(text.contains("from the morning into the evening"))
+    }
+
     func testWeatherClauseIncludesTemperatures() {
         let signal = DaySignal(kind: .weather, timestamp: makeDate())
         signal.setPayload(WeatherPayload(conditionDescription: "Rain", highTemperatureCelsius: 17.6, lowTemperatureCelsius: 9.3))

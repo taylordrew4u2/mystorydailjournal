@@ -8,6 +8,13 @@ struct VisitPayload: Codable {
     var latitude: Double
     var longitude: Double
     var isFullAccuracy: Bool
+
+    /// What the reverse geocoder originally called this place, kept when
+    /// the user renames a bare street address to the venue that's actually
+    /// there ("480 Larkin Street" -> "Blue Bottle"). Only set once a
+    /// rename happens, so payloads written before this field existed — and
+    /// places that never needed renaming — decode fine without it.
+    var rawPlaceName: String? = nil
 }
 
 struct PhotoPayload: Codable {
@@ -21,6 +28,21 @@ struct PhotoPayload: Codable {
     var placeName: String? = nil
     var latitude: Double? = nil
     var longitude: Double? = nil
+
+    /// Derived on-device by `PhotoContentAnalyzer` from the image itself —
+    /// still summaries, never pixels (§10). `faceCount` is how many faces
+    /// Vision saw, which is enough to *describe* who was in frame ("two
+    /// people") without ever claiming a name; `sceneLabels` are the top
+    /// one or two things Vision thought the shot was of.
+    var faceCount: Int = 0
+    var sceneLabels: [String] = []
+    var isFavorite: Bool = false
+
+    /// Names the user themselves confirmed for the faces in this shot,
+    /// while answering guided questions. Never inferred, never written
+    /// without that confirmation (§4) — the phone can count faces, only
+    /// the writer can say who they are.
+    var personNames: [String] = []
 }
 
 struct CalendarPayload: Codable {
