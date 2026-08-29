@@ -90,7 +90,12 @@ enum DigestRewriter {
     /// response) — the caller keeps the plain paragraph composition as
     /// fallback. Not gated behind `digestRewriteEnabled`: the user
     /// explicitly asked for this by walking through the questions.
-    static func weaveEntry(digest: String?, responses: [GuidedResponse], writerProfile: String? = nil) async -> String? {
+    static func weaveEntry(
+        digest: String?,
+        responses: [GuidedResponse],
+        omitPlaces: [String] = [],
+        writerProfile: String? = nil
+    ) async -> String? {
         let answered = responses.filter(\.isAnswered)
         guard !answered.isEmpty else { return nil }
 
@@ -130,6 +135,14 @@ enum DigestRewriter {
         wrote it in one sitting.
         - Plain text only. No emoji, no headings, no lists.
         """
+        if !omitPlaces.isEmpty {
+            prompt += """
+
+        - The writer was only walking past these places, so they are not \
+        part of the day and must not appear in the entry at all: \
+        \(omitPlaces.joined(separator: ", ")).
+        """
+        }
         if let toneInstruction = await SettingsStore.shared.writingTone.promptInstruction {
             prompt += "\n- \(toneInstruction)"
         }

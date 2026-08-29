@@ -15,6 +15,18 @@ struct VisitPayload: Codable {
     /// rename happens, so payloads written before this field existed — and
     /// places that never needed renaming — decode fine without it.
     var rawPlaceName: String? = nil
+
+    /// What the writer said this place was, when they defined it from the
+    /// options under a guided question — `PlaceKind.rawValue` ("home",
+    /// "comedyClub") — and what Maps calls it ("comedy club", "café").
+    /// Both optional: a place nobody has defined yet has neither.
+    var placeKindRaw: String? = nil
+    var categoryLabel: String? = nil
+
+    /// The writer said they were only walking past here. The stop stays on
+    /// the record — it did happen — but never enters the story: a day is
+    /// not a list of every corner the phone noticed.
+    var isPassingThrough: Bool = false
 }
 
 struct PhotoPayload: Codable {

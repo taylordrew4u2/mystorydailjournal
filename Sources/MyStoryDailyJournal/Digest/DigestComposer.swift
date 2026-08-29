@@ -78,16 +78,21 @@ enum DigestComposer {
         return date.formatted(style) + "."
     }
 
+    /// Where the day was spent. Places the writer said they were only
+    /// walking past are left out entirely — a day is not a list of every
+    /// corner the phone noticed — and a place whose name doesn't say what
+    /// it is gets what Maps (or the writer) called it.
     private static func visitsClause(_ signals: [DaySignal], placeAliases: [String: String]) -> String? {
         let visits = signals
             .filter { $0.kind == .visit }
             .sorted { $0.timestamp < $1.timestamp }
             .compactMap { $0.payload(as: VisitPayload.self) }
+            .filter { !$0.isPassingThrough }
 
         guard !visits.isEmpty else { return nil }
         // A place the writer has named is written by its name, never by the
         // address the geocoder handed back.
-        var places: [String] = []
+        var places: [(name: String, categoryLabel: String?)] = []
         for visit in visits {
             let name = PlaceAliasStore.resolve(
                 rawName: visit.placeName,
@@ -95,18 +100,36 @@ enum DigestComposer {
                 longitude: visit.longitude,
                 in: placeAliases
             ) ?? visit.placeName
-            if places.last != name { places.append(name) }
+            if places.last?.name != name { places.append((name, visit.categoryLabel)) }
         }
 
+        let names = places.map(\.name)
         switch places.count {
         case 1:
-            return "Spent time at \(places[0])."
+            let place = places[0]
+            if let label = describableCategory(of: place.name, categoryLabel: place.categoryLabel) {
+                return "Spent time at \(place.name), the \(label)."
+            }
+            return "Spent time at \(place.name)."
         case 2:
-            return "Started at \(places[0]), then a stop at \(places[1])."
+            return "Started at \(names[0]), then a stop at \(names[1])."
         default:
-            let middle = places.dropFirst().dropLast().joined(separator: ", ")
-            return "Started at \(places.first!), spent time in \(middle), then a stop at \(places.last!)."
+            let middle = names.dropFirst().dropLast().joined(separator: ", ")
+            return "Started at \(names.first!), spent time in \(middle), then a stop at \(names.last!)."
         }
+    }
+
+    /// A category is worth writing only when the name doesn't already say
+    /// it: "Cobb's, the comedy club" earns its words; "the comedy club, the
+    /// comedy club" does not.
+    private static func describableCategory(of name: String, categoryLabel: String?) -> String? {
+        guard let categoryLabel = categoryLabel?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !categoryLabel.isEmpty else { return nil }
+        let loweredName = name.lowercased()
+        let alreadySaid = categoryLabel
+            .split(separator: " ")
+            .allSatisfy { loweredName.contains($0.lowercased()) }
+        return alreadySaid ? nil : categoryLabel
     }
 
     /// Names every event with as much of its own metadata as exists: title,
