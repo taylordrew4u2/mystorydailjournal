@@ -278,6 +278,18 @@ the day knows, with nothing to confirm afterwards:
   alias store (`PlaceAliasStore`), so "480 Larkin Street" is written as
   "Blue Bottle" on that day and on every future day at that address. A
   shrug ("no idea") leaves the address alone.
+- **A place is defined with a tap, not a sentence.** Every place question
+  offers the venues Maps actually found at those coordinates
+  (`PlaceLookup`, with what kind of place each one is — "Cobb's · comedy
+  club"), then the kinds a place can be — Home, Work, A friend's place,
+  Comedy club, Gym, Store, Appointment (`PlaceKind`) — so the diary says
+  "spent time at home" rather than an address. The category comes along
+  when the name doesn't already say it: "Spent time at Cobb's, the comedy
+  club."
+- **"Just walking past"** is the last option, for a stop that was never a
+  visit: the signal stays on the record, but the place leaves the entry
+  (and the sentence that named it), is never aliased or asked about again
+  that day, and the rewrite is told not to put it back.
 - **The photos come with the question.** Each place, event and photo
   question carries the shots taken around that moment, and questions
   without any of their own show the day's camera roll — so the writer is

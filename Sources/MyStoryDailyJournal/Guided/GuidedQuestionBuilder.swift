@@ -96,11 +96,13 @@ enum GuidedQuestionBuilder {
         var askedPlaces = Set<String>()
         var namedPlaceCount = 0
 
+        // A stop the writer already dismissed as walking past is never
+        // asked about again.
         let visits = signals
             .filter { $0.kind == .visit }
             .sorted { $0.timestamp < $1.timestamp }
             .compactMap { signal -> (signal: DaySignal, payload: VisitPayload)? in
-                guard let payload = signal.payload(as: VisitPayload.self) else { return nil }
+                guard let payload = signal.payload(as: VisitPayload.self), !payload.isPassingThrough else { return nil }
                 return (signal, payload)
             }
 

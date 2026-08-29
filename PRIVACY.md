@@ -22,7 +22,8 @@ questionnaire's categories before.
 
 There is no analytics SDK, no ad SDK, no crash reporter that phones home,
 and no third-party network calls other than Apple's own frameworks
-(WeatherKit, CloudKit) acting on the user's behalf. `NSUserTrackingUsageDescription`
+(WeatherKit, CloudKit, and the Maps lookups behind reverse geocoding and
+the "where was this?" place options) acting on the user's behalf. `NSUserTrackingUsageDescription`
 is deliberately absent from Info.plist (§15) — this app doesn't track
 across other apps or websites, so App Tracking Transparency doesn't apply,
 and adding the key without real tracking behind it is itself a red flag in
@@ -38,7 +39,9 @@ own standard exemption: data that syncs only to the user's private
 CloudKit database, under their own Apple ID, with no access by the
 developer, doesn't count as "collected" by this app. WeatherKit similarly
 routes through Apple's own infrastructure on the user's behalf, not to
-this app's (non-existent) servers.
+this app's (non-existent) servers. The same holds for MapKit: naming a
+place sends a coordinate to Apple Maps and gets venue names back — no
+entry text, no photos, and nothing about who the user is, goes with it.
 
 If a future milestone adds anything that changes this — a server
 component, a third-party SDK, an analytics tool — this table needs a

@@ -8,6 +8,11 @@ struct PlaceConfirmation: Equatable, Sendable {
     var confirmedName: String
     var latitude: Double?
     var longitude: Double?
+    /// What the writer said the place was, when they defined it from the
+    /// options rather than typing a name.
+    var kind: PlaceKind? = nil
+    /// What Maps calls it ("comedy club", "café").
+    var categoryLabel: String? = nil
 }
 
 /// Applies a confirmed venue name everywhere the old address survives: the
@@ -43,7 +48,13 @@ enum PlaceRenamer {
                 longitude: confirmation.longitude
             )
             replacements[raw] = name
-            rewriteSignals(of: record, from: raw, to: name)
+            rewriteSignals(
+                of: record,
+                from: raw,
+                to: name,
+                kind: confirmation.kind,
+                categoryLabel: confirmation.categoryLabel
+            )
         }
 
         guard !replacements.isEmpty else { return [:] }
@@ -54,11 +65,46 @@ enum PlaceRenamer {
         return replacements
     }
 
+    /// "Just walking past" — the stop stays on the record but leaves the
+    /// story: the visit is flagged so no future digest names it, and the
+    /// sentence that named it is lifted out of the text the entry is being
+    /// built from. Nothing is remembered device-wide: passing a place today
+    /// says nothing about the next time the writer stops there.
+    @discardableResult
+    static func markPassingThrough(
+        placeNamed rawName: String,
+        on record: DayRecord,
+        in context: ModelContext
+    ) -> Bool {
+        let raw = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return false }
+
+        var marked = false
+        for signal in record.signals ?? [] where signal.kind == .visit {
+            guard var payload = signal.payload(as: VisitPayload.self),
+                  payload.placeName.compare(raw, options: .caseInsensitive) == .orderedSame else { continue }
+            payload.isPassingThrough = true
+            payload.placeKindRaw = PlaceKind.walkingPast.rawValue
+            signal.setPayload(payload)
+            marked = true
+        }
+
+        record.bodyText = PlaceNameResolver.removingMentions(of: raw, in: record.bodyText)
+        try? context.save()
+        return marked
+    }
+
     /// Every payload that carries a place name gets the new one, so the
     /// next digest regeneration composes from the venue rather than the
     /// address. The original is kept on visits (`rawPlaceName`) — it's what
     /// a future geocode will produce again, and what the alias is keyed on.
-    private static func rewriteSignals(of record: DayRecord, from raw: String, to name: String) {
+    private static func rewriteSignals(
+        of record: DayRecord,
+        from raw: String,
+        to name: String,
+        kind: PlaceKind? = nil,
+        categoryLabel: String? = nil
+    ) {
         for signal in record.signals ?? [] {
             switch signal.kind {
             case .visit:
@@ -66,6 +112,8 @@ enum PlaceRenamer {
                       payload.placeName.compare(raw, options: .caseInsensitive) == .orderedSame else { continue }
                 payload.rawPlaceName = payload.rawPlaceName ?? payload.placeName
                 payload.placeName = name
+                payload.placeKindRaw = kind?.rawValue ?? payload.placeKindRaw
+                payload.categoryLabel = categoryLabel ?? payload.categoryLabel
                 signal.setPayload(payload)
             case .photo:
                 guard var payload = signal.payload(as: PhotoPayload.self),

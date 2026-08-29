@@ -26,6 +26,10 @@ struct GuidedEntryView: View {
     @State private var answers: [String]
     @State private var feelings: [String]
     @State private var chosenNames: [[String]]
+    @State private var placeChoices: [PlaceChoice?]
+    /// What Maps found at each place question's coordinates, keyed by
+    /// question id and loaded as that question comes up.
+    @State private var nearbyPlaces: [String: [NearbyPlace]] = [:]
     @State private var currentIndex = 0
     @State private var isReviewing = false
     @State private var composedText = ""
@@ -49,6 +53,7 @@ struct GuidedEntryView: View {
         _answers = State(initialValue: Array(repeating: "", count: questions.count))
         _feelings = State(initialValue: Array(repeating: "", count: questions.count))
         _chosenNames = State(initialValue: Array(repeating: [], count: questions.count))
+        _placeChoices = State(initialValue: Array(repeating: nil, count: questions.count))
     }
 
     /// Short words for the follow-up under every question — a tap is enough
@@ -90,6 +95,10 @@ struct GuidedEntryView: View {
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(3...6)
 
+                    if question.placeSubject != nil {
+                        placeOptionsSection
+                    }
+
                     if !question.nameSuggestions.isEmpty {
                         nameSuggestionRow
                     }
@@ -119,6 +128,70 @@ struct GuidedEntryView: View {
                 for: record.date,
                 timeZoneIdentifier: record.timeZoneIdentifier
             )
+        }
+        .task(id: currentIndex) {
+            await loadNearbyPlaces()
+        }
+    }
+
+    /// Defining a place is a tap, not a sentence: the venues Maps actually
+    /// found at those coordinates first, then what kind of place it was,
+    /// ending with the way out for a stop that was never a visit.
+    private var placeOptionsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Where was this?")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if !venueOptions.isEmpty {
+                chipRow(venueOptions)
+            }
+            chipRow(PlaceKind.options.map { PlaceChoice.kind($0) })
+        }
+    }
+
+    private func chipRow(_ choices: [PlaceChoice]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(choices, id: \.displayName) { choice in
+                    chip(choice.displayName, isSelected: placeChoices[currentIndex] == choice) {
+                        select(choice)
+                    }
+                }
+            }
+        }
+    }
+
+    private var venueOptions: [PlaceChoice] {
+        (nearbyPlaces[question.id] ?? []).map {
+            PlaceChoice.venue(name: $0.name, categoryLabel: $0.categoryLabel)
+        }
+    }
+
+    /// Asks Maps what's at this question's coordinates, once per question.
+    private func loadNearbyPlaces() async {
+        guard let place = question.placeSubject,
+              let latitude = place.latitude,
+              let longitude = place.longitude,
+              nearbyPlaces[question.id] == nil else { return }
+        nearbyPlaces[question.id] = await PlaceLookup.nearbyPlaces(latitude: latitude, longitude: longitude)
+    }
+
+    /// Tapping an option answers the question in words too — the entry
+    /// should say what the writer chose, not carry it as a hidden flag.
+    /// Tapping the selected one again clears it.
+    private func select(_ choice: PlaceChoice) {
+        let previous = placeChoices[currentIndex]
+        if previous == choice {
+            placeChoices[currentIndex] = nil
+            if answers[currentIndex] == choice.answerText { answers[currentIndex] = "" }
+            return
+        }
+
+        placeChoices[currentIndex] = choice
+        let answer = answers[currentIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+        if answer.isEmpty || answer == previous?.answerText {
+            answers[currentIndex] = choice.answerText
         }
     }
 
@@ -259,6 +332,7 @@ struct GuidedEntryView: View {
             questions: questions,
             responses: currentResponses,
             chosenNames: chosenNames,
+            placeChoices: placeChoices,
             baseText: baseText,
             to: record,
             in: context
@@ -266,7 +340,11 @@ struct GuidedEntryView: View {
         responses = outcome.responses
         composedText = Self.compose(baseText: outcome.baseText, responses: outcome.responses)
         isReviewing = true
-        weaveAnswersIntoEntry(outcome.responses, baseText: outcome.baseText)
+        weaveAnswersIntoEntry(
+            outcome.responses,
+            baseText: outcome.baseText,
+            omitPlaces: outcome.omittedPlaces
+        )
     }
 
     private var currentResponses: [GuidedResponse] {
@@ -285,7 +363,11 @@ struct GuidedEntryView: View {
     /// Best-effort: the plain composition is already on screen as the
     /// fallback, and stays if the on-device model can't run or the user
     /// went back to the questions.
-    private func weaveAnswersIntoEntry(_ responses: [GuidedResponse], baseText: String) {
+    private func weaveAnswersIntoEntry(
+        _ responses: [GuidedResponse],
+        baseText: String,
+        omitPlaces: [String] = []
+    ) {
         guard !isWeavingRewrite else { return }
         let answered = responses.filter(\.isAnswered)
         guard !answered.isEmpty else { return }
@@ -294,7 +376,12 @@ struct GuidedEntryView: View {
         let digest = baseText.isEmpty ? nil : baseText
         let profile = WriterProfile.summary(in: context)
         Task {
-            let woven = await DigestRewriter.weaveEntry(digest: digest, responses: answered, writerProfile: profile)
+            let woven = await DigestRewriter.weaveEntry(
+                digest: digest,
+                responses: answered,
+                omitPlaces: omitPlaces,
+                writerProfile: profile
+            )
             await MainActor.run {
                 if let woven, isReviewing {
                     composedText = woven

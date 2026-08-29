@@ -80,6 +80,39 @@ enum PlaceNameResolver {
         return result
     }
 
+    /// Lifts a place out of a piece of text entirely, sentence and all —
+    /// what "just walking past" means for a digest that already wrote the
+    /// stop down. Falls back to the original text when removing the
+    /// sentence would leave nothing behind, since an empty entry is worse
+    /// than an extra street name.
+    static func removingMentions(of placeName: String, in text: String) -> String {
+        let needle = placeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty, text.range(of: needle, options: .caseInsensitive) != nil else { return text }
+
+        let kept = sentences(in: text).filter { $0.range(of: needle, options: .caseInsensitive) == nil }
+        let rebuilt = kept.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        return rebuilt.isEmpty ? text : rebuilt
+    }
+
+    /// Splits on sentence endings, keeping the punctuation with its
+    /// sentence — the digest writes one clause per sentence, so this is
+    /// exactly the granularity a place occupies.
+    private static func sentences(in text: String) -> [String] {
+        var sentences: [String] = []
+        var current = ""
+        for character in text {
+            current.append(character)
+            if character == "." || character == "!" || character == "?" || character == "\n" {
+                let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { sentences.append(trimmed) }
+                current = ""
+            }
+        }
+        let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { sentences.append(trimmed) }
+        return sentences
+    }
+
     private static let maximumWordCount = 6
 
     private static let clauseBreaks = CharacterSet(charactersIn: ".,;:!?\n—–")

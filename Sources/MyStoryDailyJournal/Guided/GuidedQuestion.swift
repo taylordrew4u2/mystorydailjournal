@@ -39,11 +39,18 @@ struct GuidedQuestion: Identifiable, Equatable, Sendable {
     /// the question itself is already about feelings.
     var feelingPrompt: String? = "How did that feel?"
 
+    /// The place this question is about, whatever its name looks like. A
+    /// place with a perfectly good name can still turn out to be somewhere
+    /// the writer only walked past, so the options are offered either way.
+    var placeSubject: (rawName: String, latitude: Double?, longitude: Double?)? {
+        guard case let .place(rawName, latitude, longitude) = subject else { return nil }
+        return (rawName, latitude, longitude)
+    }
+
     /// The address this question's answer would rename, if any.
     var renamablePlace: (rawName: String, latitude: Double?, longitude: Double?)? {
-        guard case let .place(rawName, latitude, longitude) = subject,
-              PlaceNameResolver.looksLikeAddress(rawName) else { return nil }
-        return (rawName, latitude, longitude)
+        guard let place = placeSubject, PlaceNameResolver.looksLikeAddress(place.rawName) else { return nil }
+        return place
     }
 }
 

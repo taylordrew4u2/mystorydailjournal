@@ -20,20 +20,42 @@ enum GuidedAnswerApplier {
         var baseText: String
         var renamedPlaces: [String: String]
         var taggedPeople: [String]
+        /// Places the writer said they were only walking past. Already
+        /// lifted out of `baseText`; carried here so the rewrite is told
+        /// not to put them back.
+        var omittedPlaces: [String] = []
     }
 
     /// `chosenNames` is what the writer tapped from each question's name
     /// chips, one entry per question — a tap is as much a confirmation as
-    /// typing the name.
+    /// typing the name. `placeChoices` is the same for the place options:
+    /// the venue Maps found, the kind of place it was, or "just walking
+    /// past."
     static func apply(
         questions: [GuidedQuestion],
         responses: [GuidedResponse],
         chosenNames: [[String]] = [],
+        placeChoices: [PlaceChoice?] = [],
         baseText: String,
         to record: DayRecord,
         in context: ModelContext
     ) -> Outcome {
-        let confirmations = placeConfirmations(questions: questions, responses: responses)
+        // "Just walking past" first: a stop that never happened shouldn't be
+        // renamed, aliased, or left in the text the entry is built from.
+        var omittedPlaces: [String] = []
+        for (index, question) in questions.enumerated() {
+            guard let place = question.placeSubject,
+                  index < placeChoices.count,
+                  placeChoices[index]?.isPassingThrough == true else { continue }
+            PlaceRenamer.markPassingThrough(placeNamed: place.rawName, on: record, in: context)
+            omittedPlaces.append(place.rawName)
+        }
+
+        let confirmations = placeConfirmations(
+            questions: questions,
+            responses: responses,
+            placeChoices: placeChoices
+        )
         let replacements = PlaceRenamer.apply(confirmations, to: record, in: context)
 
         let renamedResponses = responses.map { response in
@@ -63,29 +85,49 @@ enum GuidedAnswerApplier {
 
         try? context.save()
 
+        var text = baseText
+        for place in omittedPlaces {
+            text = PlaceNameResolver.removingMentions(of: place, in: text)
+        }
+
         return Outcome(
             responses: renamedResponses,
-            baseText: PlaceNameResolver.rename(baseText, replacements: replacements),
+            baseText: PlaceNameResolver.rename(text, replacements: replacements),
             renamedPlaces: replacements,
-            taggedPeople: deduplicated(tagged)
+            taggedPeople: deduplicated(tagged),
+            omittedPlaces: omittedPlaces
         )
     }
 
-    /// An answer to "What's at 480 Larkin Street?" is a rename if a venue
-    /// name can be read out of it; a shrug leaves the address alone.
+    /// What a place question settled. A tapped option wins — it's the
+    /// writer pointing at the venue Maps found or saying what kind of place
+    /// it was — and typing a name still works when no option fit. A shrug,
+    /// or nothing at all, leaves the address alone.
     nonisolated static func placeConfirmations(
         questions: [GuidedQuestion],
-        responses: [GuidedResponse]
+        responses: [GuidedResponse],
+        placeChoices: [PlaceChoice?] = []
     ) -> [PlaceConfirmation] {
-        zip(questions, responses).compactMap { question, response in
-            guard let place = question.renamablePlace,
-                  let name = PlaceNameResolver.venueName(fromAnswer: response.answer),
+        questions.enumerated().compactMap { index, question in
+            guard let place = question.placeSubject else { return nil }
+            let choice = index < placeChoices.count ? placeChoices[index] : nil
+            if choice?.isPassingThrough == true { return nil }
+
+            let answer = index < responses.count ? responses[index].answer : ""
+            // A tapped option names any place; a typed answer only renames
+            // one the geocoder never named properly.
+            let name = choice?.confirmedName
+                ?? (question.renamablePlace == nil ? nil : PlaceNameResolver.venueName(fromAnswer: answer))
+            guard let name, !name.isEmpty,
                   name.compare(place.rawName, options: .caseInsensitive) != .orderedSame else { return nil }
+
             return PlaceConfirmation(
                 rawName: place.rawName,
                 confirmedName: name,
                 latitude: place.latitude,
-                longitude: place.longitude
+                longitude: place.longitude,
+                kind: choice?.kind,
+                categoryLabel: choice?.categoryLabel
             )
         }
     }
