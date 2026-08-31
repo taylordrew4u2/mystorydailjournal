@@ -413,6 +413,34 @@ this repo point at placeholder identifiers. A failing run uploads its
 `.xcresult` bundle as an artifact so the failure can be read without
 re-running anything.
 
+### Importing an Instagram archive
+
+Settings → Social → Import from Instagram reads a "Download your
+information" export and files each post, story, reel and comment on the day
+it happened, so the journal has the years it wasn't running for.
+
+Ask Instagram for **JSON** rather than HTML, and unzip the archive before
+choosing it — iOS has no public API for reading a `.zip`, and a third-party
+archiver is a poor trade for a long-press in Files. Everything is read on
+device; the archive's photos and videos are counted, never copied.
+
+Only what the writer made is read — posts, stories, reels, and their own
+comments. `InstagramArchive.ignoredFileNames` names what is deliberately
+skipped: followers, following, likes, ad interests, and messages. The first
+four are about other people or about advertising, and messages are other
+people's words as much as the writer's.
+
+Importing is idempotent, keyed on a stable per-post identity, so
+re-importing the same export — or a fresh one that overlaps it — adds each
+post once. An imported post is evidence attached to a day, like a visit or
+a photo; a day that already has an entry keeps it.
+
+Export layouts change without notice, so the reader matches file *names*
+wherever they sit in the tree, takes whichever array a wrapper object
+holds rather than a fixed key, and skips any item it can't read. It also
+repairs Instagram's long-standing encoding bug, which writes UTF-8 bytes as
+if they were Latin-1 and turns "café" into "cafÃ©".
+
 ### Trying the quick-reply feature
 
 1. Run the app once and complete (or skip) the setup wizard — this is what

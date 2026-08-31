@@ -55,6 +55,9 @@ enum DigestComposer {
         if let attachmentsClause = attachmentsClause(signals) {
             clauses.append(attachmentsClause)
         }
+        if let socialClause = socialPostsClause(signals) {
+            clauses.append(socialClause)
+        }
 
         guard clauses.count > 1 else {
             return "\(clauses[0]) No signals were available for this day."
@@ -350,6 +353,36 @@ enum DigestComposer {
             return "Saved a note: \"\(snippet)\""
         }
         return described.joined(separator: " ") + (described.last?.hasSuffix(".") == true ? "" : ".")
+    }
+
+    /// What the writer posted publicly that day, out of a social archive
+    /// they imported. The caption is their own words, so it goes in the way
+    /// a shared note does; the picture count is context, not a gallery.
+    private static func socialPostsClause(_ signals: [DaySignal]) -> String? {
+        let posts = signals
+            .filter { $0.kind == .socialPost }
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { $0.payload(as: SocialPostPayload.self) }
+        guard !posts.isEmpty else { return nil }
+
+        var parts: [String] = []
+        for post in posts.prefix(4) {
+            let snippet = post.text.count > 140
+                ? String(post.text.prefix(140)) + "…"
+                : post.text
+            if snippet.isEmpty {
+                parts.append(post.mediaCount == 1
+                    ? "Put a photo on \(post.network)"
+                    : "Put \(post.mediaCount) photos on \(post.network)")
+            } else {
+                parts.append("Posted on \(post.network): \"\(snippet)\"")
+            }
+        }
+        if posts.count > parts.count {
+            let rest = posts.count - parts.count
+            parts.append(rest == 1 ? "and one more post" : "and \(rest) more posts")
+        }
+        return parts.joined(separator: ". ") + "."
     }
 
     /// Things the user pinned to the day by hand from the entry view. Notes

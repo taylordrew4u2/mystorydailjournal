@@ -321,6 +321,21 @@ enum ProfileLearner {
     private static func voiceObservations(in days: [DayRecord]) -> [Observation] {
         var entries: [String] = []
         var dates: [Date] = []
+        // Captions from an imported social archive count here for the same
+        // reason the day's own body text does, and for the only reason
+        // anything counts here: the writer wrote them. They are also the
+        // one voice source that exists for days written before the app did.
+        for day in days {
+            for signal in day.signals ?? [] where signal.kind == .socialPost {
+                guard let post = signal.payload(as: SocialPostPayload.self) else { continue }
+                let caption = post.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !caption.isEmpty {
+                    entries.append(caption)
+                    dates.append(day.date)
+                }
+            }
+        }
+
         for day in days where day.isUserWritten {
             dates.append(day.date)
             let text: String = day.bodyText
