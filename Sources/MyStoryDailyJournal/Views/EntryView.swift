@@ -29,6 +29,7 @@ struct EntryView: View {
     @State private var pickedPhotos: [PhotosPickerItem] = []
     @State private var showFileImporter = false
     @State private var showRegenerateOptions = false
+    @State private var showShareSheet = false
 
     var body: some View {
         Group {
@@ -49,6 +50,14 @@ struct EntryView: View {
                 } label: {
                     Image(systemName: "paperclip")
                 }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showShareSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(record?.bodyText.isEmpty ?? true)
             }
             // The always-there place to rebuild a day after adding new
             // things — days with the user's own words confirm first.
@@ -174,6 +183,9 @@ struct EntryView: View {
                 try? context.save()
                 weaveNotesIfChanged(record)
             }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            EntryShareSheet(record: record)
         }
         .sheet(isPresented: $showRefinement) {
             NavigationStack {
