@@ -46,12 +46,17 @@ jobs:
 
       # Turns the Screen Time target into an ExtensionKit extension. Its
       # edits are pinned to exact strings and it refuses to write anything
-      # if the project file has drifted; a simulator test run doesn't
-      # depend on the conversion, so a refusal is reported and not fatal.
+      # if the project file has drifted. Whether it applied decides where
+      # the appex is embedded and which extension dictionary the simulator
+      # expects, so the outcome is recorded rather than swallowed.
       - name: Convert the Screen Time extension
         run: |
-          python3 fix_screentime_extension.py \
-            || echo "::warning::fix_screentime_extension.py did not apply — the Screen Time target stays a plain app extension for this build."
+          if python3 fix_screentime_extension.py; then
+            echo "SCREENTIME_CONVERTED=yes" >> "$GITHUB_ENV"
+          else
+            echo "SCREENTIME_CONVERTED=no" >> "$GITHUB_ENV"
+            echo "::warning::fix_screentime_extension.py did not apply. The Screen Time target stays a plain app extension, and its Info.plist has EXAppExtensionAttributes rather than NSExtension — which the simulator refuses to install."
+          fi
 
       # Device names come and go with the runner image; ask the machine
       # what it actually has rather than hard-coding "iPhone 16".
@@ -67,20 +72,62 @@ jobs:
           echo "Using simulator $udid"
           echo "SIMULATOR_ID=$udid" >> "$GITHUB_ENV"
 
-      - name: Build and test
+      # Split from the test run so that an install failure can be told
+      # apart from a compile failure, and so the bundle can be inspected
+      # in between.
+      - name: Build for testing
         env:
           NSUnbufferedIO: YES
         run: |
           set -o pipefail
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -project MyStoryDailyJournal.xcodeproj \
             -scheme MyStoryDailyJournal \
             -destination "id=$SIMULATOR_ID" \
-            -resultBundlePath TestResults.xcresult \
+            -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGN_ENTITLEMENTS=""
+
+      # The simulator refuses an app whose embedded extensions declare the
+      # wrong kind of extension dictionary, and its error names only one of
+      # them — so show what was actually built.
+      - name: Inspect the built app bundle
+        if: ${{ !cancelled() }}
+        run: |
+          echo "Screen Time conversion applied: ${SCREENTIME_CONVERTED:-unknown}"
+          app=$(find DerivedData/Build/Products -maxdepth 2 -name "*.app" -type d | head -1)
+          if [ -z "$app" ]; then
+            echo "No .app was produced."
+            exit 0
+          fi
+          echo "App bundle: $app"
+          for dir in "$app/PlugIns" "$app/Extensions"; do
+            [ -d "$dir" ] || { echo "(no $(basename "$dir")/ directory)"; continue; }
+            echo "=== $(basename "$dir")/ ==="
+            for ext in "$dir"/*.appex; do
+              [ -d "$ext" ] || continue
+              echo "--- $(basename "$ext")"
+              plutil -extract CFBundleIdentifier raw "$ext/Info.plist" 2>/dev/null || echo "  (no CFBundleIdentifier)"
+              plutil -extract NSExtension.NSExtensionPointIdentifier raw "$ext/Info.plist" 2>/dev/null \
+                || echo "  NSExtension: ABSENT"
+              plutil -extract EXAppExtensionAttributes.EXExtensionPointIdentifier raw "$ext/Info.plist" 2>/dev/null \
+                || echo "  EXAppExtensionAttributes: ABSENT"
+            done
+          done
+
+      - name: Test
+        env:
+          NSUnbufferedIO: YES
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project MyStoryDailyJournal.xcodeproj \
+            -scheme MyStoryDailyJournal \
+            -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult
 
       # The result bundle is what makes a red run diagnosable after the
       # fact — which failed, and why.
