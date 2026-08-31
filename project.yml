@@ -32,6 +32,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mystorydailyjournal.app
         PRODUCT_NAME: My Story
+        # PRODUCT_MODULE_NAME defaults to PRODUCT_NAME, which would make the
+        # Swift module "My_Story" — so `@testable import MyStoryDailyJournal`
+        # cannot resolve and the test target fails to build. Keep the nice
+        # product name; keep the module name the code actually imports.
+        PRODUCT_MODULE_NAME: MyStoryDailyJournal
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: false
