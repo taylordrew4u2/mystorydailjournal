@@ -131,6 +131,16 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(digestRewriteEnabled, forKey: Keys.digestRewriteEnabled) }
     }
 
+    /// Whether the app keeps a standing picture of the writer — the people,
+    /// places, rhythms, themes and voice it has learned from their own
+    /// journal (`ProfileLearner`). On by default: the app has always read
+    /// recent entries to write in their voice, and this is that, remembered.
+    /// Turning it off stops new learning; what's already known is reviewed
+    /// and deleted in "What this app knows about you."
+    @Published var profileLearningEnabled: Bool {
+        didSet { defaults.set(profileLearningEnabled, forKey: Keys.profileLearning) }
+    }
+
     /// §13 M10: opt-in, Bluetooth-range nearby-person suggestions. Off by
     /// default and does nothing until explicitly turned on (§12).
     @Published var nearbyPeopleEnabled: Bool {
@@ -167,6 +177,7 @@ final class SettingsStore: ObservableObject {
         lastDigestCheckDate = defaults.object(forKey: Keys.lastDigestCheckDate) as? Date
         historyBackfillCompleted = defaults.bool(forKey: Keys.historyBackfillCompleted)
         digestRewriteEnabled = defaults.bool(forKey: Keys.digestRewriteEnabled)
+        profileLearningEnabled = defaults.object(forKey: Keys.profileLearning) as? Bool ?? true
         nearbyPeopleEnabled = defaults.bool(forKey: Keys.nearbyPeopleEnabled)
         myDisplayName = defaults.string(forKey: Keys.myDisplayName) ?? ""
     }
@@ -201,6 +212,9 @@ final class SettingsStore: ObservableObject {
         static let lastDigestCheckDate = "settings.lastDigestCheckDate"
         static let historyBackfillCompleted = "settings.historyBackfillCompleted"
         static let digestRewriteEnabled = "settings.digestRewriteEnabled"
+        /// Shared with `ProfileLearner`, which runs off the main actor and
+        /// reads this key directly.
+        static let profileLearning = ProfileLearner.learningEnabledKey
         static let nearbyPeopleEnabled = "settings.nearbyPeopleEnabled"
         static let myDisplayName = "settings.myDisplayName"
     }

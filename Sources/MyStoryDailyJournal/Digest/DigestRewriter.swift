@@ -1,53 +1,7 @@
 import Foundation
-import SwiftData
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
-
-/// A compact, always-current picture of the writer, learned entirely
-/// on-device from their own journal: who they write about, their recurring
-/// themes, and how long they like their entries. Rebuilt fresh from the
-/// last 30 user-written days every time it's used — the app keeps learning
-/// as the journal grows, and nothing about this ever leaves the phone.
-enum WriterProfile {
-    static func summary(in context: ModelContext) -> String? {
-        let userWritten = DayRecordSource.userWritten.rawValue
-        let converted = DayRecordSource.converted.rawValue
-        var descriptor = FetchDescriptor<DayRecord>(
-            predicate: #Predicate { $0.sourceRaw == userWritten || $0.sourceRaw == converted },
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
-        descriptor.fetchLimit = 30
-        guard let records = try? context.fetch(descriptor), !records.isEmpty else { return nil }
-
-        var parts: [String] = []
-
-        let peopleCounts = records
-            .flatMap { $0.people ?? [] }
-            .reduce(into: [String: Int]()) { $0[$1.name, default: 0] += 1 }
-        let topPeople = peopleCounts.sorted { $0.value > $1.value }.prefix(4).map(\.key)
-        if !topPeople.isEmpty {
-            parts.append("People who often appear in their life: \(topPeople.joined(separator: ", ")).")
-        }
-
-        let tagCounts = records
-            .flatMap { $0.tags ?? [] }
-            .reduce(into: [String: Int]()) { $0[$1.name, default: 0] += 1 }
-        let topTags = tagCounts.sorted { $0.value > $1.value }.prefix(5).map(\.key)
-        if !topTags.isEmpty {
-            parts.append("Recurring themes in their journal: \(topTags.joined(separator: ", ")).")
-        }
-
-        let averageLength = records.map(\.bodyText.count).reduce(0, +) / records.count
-        switch averageLength {
-        case ..<200: parts.append("They keep entries short and to the point.")
-        case ..<800: parts.append("They usually write a few unhurried paragraphs.")
-        default: parts.append("They like long, detailed entries.")
-        }
-
-        return parts.joined(separator: " ")
-    }
-}
 
 /// Optional on-device rewrite of the rule-based digest into a more natural
 /// voice (§9, §13 M10). Default off, gated behind
@@ -64,13 +18,13 @@ enum WriterProfile {
 /// text rather than surfacing an error, since this is a "nicer to have,"
 /// not a data path.
 enum DigestRewriter {
-    static func rewrite(ruleBasedText: String, writerProfile: String? = nil) async -> String {
+    static func rewrite(ruleBasedText: String, profile: String? = nil) async -> String {
         guard await SettingsStore.shared.digestRewriteEnabled else { return ruleBasedText }
 
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, *) else { return ruleBasedText }
         do {
-            return try await attemptRewrite(of: ruleBasedText, writerProfile: writerProfile) ?? ruleBasedText
+            return try await attemptRewrite(of: ruleBasedText, profile: profile) ?? ruleBasedText
         } catch {
             return ruleBasedText
         }
@@ -94,7 +48,7 @@ enum DigestRewriter {
         digest: String?,
         responses: [GuidedResponse],
         omitPlaces: [String] = [],
-        writerProfile: String? = nil
+        profile: String? = nil
     ) async -> String? {
         let answered = responses.filter(\.isAnswered)
         guard !answered.isEmpty else { return nil }
@@ -146,14 +100,14 @@ enum DigestRewriter {
         if let toneInstruction = await SettingsStore.shared.writingTone.promptInstruction {
             prompt += "\n- \(toneInstruction)"
         }
-        if let writerProfile {
+        if let profile {
             prompt += """
 
 
-            About the writer, learned on-device from their journal — use it \
-            only to match their voice and what they care about, never state \
-            it as new facts:
-            \(writerProfile)
+            About the writer, learned on-device from their own journal — use \
+            it to match their voice and to know who and what they mean, never \
+            state any of it as something that happened today:
+            \(profile)
             """
         }
         if let digest, !digest.isEmpty {
@@ -186,7 +140,7 @@ enum DigestRewriter {
 
     #if canImport(FoundationModels)
     @available(iOS 26.0, *)
-    private static func attemptRewrite(of text: String, writerProfile: String? = nil) async throws -> String? {
+    private static func attemptRewrite(of text: String, profile: String? = nil) async throws -> String? {
         guard case .available = SystemLanguageModel.default.availability else {
             return nil
         }
@@ -200,13 +154,14 @@ enum DigestRewriter {
         if let toneInstruction = await SettingsStore.shared.writingTone.promptInstruction {
             prompt += " \(toneInstruction)"
         }
-        if let writerProfile {
+        if let profile {
             prompt += """
 
 
-            About the writer, learned on-device from their journal — use it \
-            only to match their voice, never state it as new facts:
-            \(writerProfile)
+            About the writer, learned on-device from their own journal — use \
+            it to match their voice and to know who and what they mean, never \
+            state any of it as something that happened today:
+            \(profile)
             """
         }
         prompt += "\n\n\(text)"

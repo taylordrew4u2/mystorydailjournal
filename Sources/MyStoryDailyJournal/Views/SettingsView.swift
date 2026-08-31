@@ -102,6 +102,9 @@ struct SettingsView: View {
                         Text("Both").tag(AppLockMethod.both)
                     }
                 }
+                NavigationLink("What this app knows about you") {
+                    ProfileReviewView()
+                }
                 NavigationLink("Your Data") {
                     YourDataView()
                 }
@@ -480,10 +483,16 @@ struct YourDataView: View {
                 design makes it impossible for the app to store or export it.
                 • AI rewriting — runs entirely on this phone. Your words \
                 are never sent anywhere to be rewritten.
-                • Personalization — to write more like you, the app looks \
-                at your own recent entries (people, themes, entry length) \
-                each time it writes. This happens on this phone only, is \
-                recomputed on the spot, and is never stored or sent anywhere.
+                • Personalization — to write like you and to know who and \
+                what you mean, the app reads your own entries and keeps what \
+                it notices: the people you tag and who they turn up with, \
+                the places you name and when you go, the rhythms of your \
+                week, your recurring themes, and how you write. This is \
+                worked out on this phone, stored with your journal (so it \
+                syncs to your own iCloud and nowhere else), and every single \
+                thing it has concluded can be read, muted or deleted under \
+                "What this app knows about you" — where learning can also be \
+                turned off entirely.
                 • Notes, photos, and files you attach — notes verbatim, \
                 photo identifiers, and file names only, never file contents.
                 """)

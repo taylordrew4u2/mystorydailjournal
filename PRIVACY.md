@@ -17,7 +17,7 @@ questionnaire's categories before.
 | Photos or Videos | `PhotosSignalProvider` — asset identifiers and screenshot flag only, never image bytes (§4 M3) | **Data Not Collected** |
 | Health | `HealthSignalProvider` — steps, distance, workouts, read-only (§4 M3) | **Data Not Collected** |
 | Contacts | `Person` entities — freeform names only, no `CNContact` linking (§12) | **Data Not Collected** |
-| Other User Content | `DayRecord.bodyText`, `DaySignal` payloads, calendar event titles/attendees, shared/ingested text (§4, §10) | **Data Not Collected** |
+| Other User Content | `DayRecord.bodyText`, `DaySignal` payloads, calendar event titles/attendees, shared/ingested text (§4, §10), and the `ProfileFact`s derived from them | **Data Not Collected** |
 | User ID | None — no account system beyond the user's own Apple ID/iCloud (§15) | **Data Not Collected** |
 
 There is no analytics SDK, no ad SDK, no crash reporter that phones home,
