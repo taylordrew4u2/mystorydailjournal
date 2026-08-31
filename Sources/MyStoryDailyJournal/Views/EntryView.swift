@@ -279,8 +279,9 @@ struct EntryView: View {
             timeZoneIdentifier: record.timeZoneIdentifier
         )
         let savedPrompts = GuidedQuestion.from(settings.activeQuestionSet)
+        let learnedPrompts = learnedQuestions()
         var seen = Set<String>()
-        return (signalQuestions + savedPrompts).filter { question in
+        return (signalQuestions + learnedPrompts + savedPrompts).filter { question in
             seen.insert(question.text.normalizedPromptText).inserted
         }
     }
@@ -289,6 +290,52 @@ struct EntryView: View {
         let context = GuidedQuestionBuilder.contextSummary(for: record.signals ?? [])
         guard context.isActive else { return "Answer a few prompts" }
         return "Answer prompts about \(context.shortDescription)"
+    }
+
+    private func learnedQuestions(limit: Int = 3) -> [GuidedQuestion] {
+        var descriptor = FetchDescriptor<ProfileFact>(
+            predicate: #Predicate { !$0.isMuted },
+            sortBy: [
+                SortDescriptor(\.lastObserved, order: .reverse),
+            ]
+        )
+        descriptor.fetchLimit = 12
+
+        let facts = (try? context.fetch(descriptor)) ?? []
+        let ranked = facts.sorted {
+            if $0.isPinned != $1.isPinned { return $0.isPinned }
+            if $0.observationCount != $1.observationCount { return $0.observationCount > $1.observationCount }
+            return $0.lastObserved > $1.lastObserved
+        }
+        return ranked.compactMap(Self.learnedQuestion).prefix(limit).map { $0 }
+    }
+
+    private static func learnedQuestion(for fact: ProfileFact) -> GuidedQuestion? {
+        switch fact.kind {
+        case .place:
+            return GuidedQuestion(
+                id: "learned.place.\(fact.id.uuidString)",
+                text: "You have written about \(fact.subject) before. Did it matter today?",
+                subject: .open,
+                feelingPrompt: "How did that place sit with you today?"
+            )
+        case .rhythm:
+            return GuidedQuestion(
+                id: "learned.rhythm.\(fact.id.uuidString)",
+                text: "This looks close to one of your usual rhythms: \(fact.subject). Did today follow it or break from it?",
+                subject: .open,
+                feelingPrompt: "How did that rhythm feel today?"
+            )
+        case .theme:
+            return GuidedQuestion(
+                id: "learned.theme.\(fact.id.uuidString)",
+                text: "You often come back to \(fact.subject). Was that part of today?",
+                subject: .open,
+                feelingPrompt: "How do you feel about it now?"
+            )
+        case .person, .voice, .correction:
+            return nil
+        }
     }
 
     /// Generates or regenerates this day's digest on demand: first-time

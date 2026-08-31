@@ -25,7 +25,7 @@ enum GuidedQuestionBuilder {
     /// How many signal-specific questions to ask before the two open ones.
     /// Address questions are exempt — being asked where you were is the
     /// point, and there are rarely many in a day.
-    private static let specificQuestionLimit = 6
+    private static let specificQuestionLimit = 10
 
     /// Photos taken within this much of a place or event are shown with
     /// its question — close enough to be the same moment.
@@ -63,21 +63,23 @@ enum GuidedQuestionBuilder {
             }
         }
 
-        otherQuestions += eventQuestions(signals: signals, photos: photos, attendeeNames: attendeeNames)
+        otherQuestions += eventQuestions(signals: signals, photos: photos)
+        otherQuestions += savedItemQuestions(signals: signals)
+        otherQuestions += socialPostQuestions(signals: signals)
         if let photoQuestion = photoQuestion(photos: photos) {
             otherQuestions.append(photoQuestion)
         }
         if let peopleQuestion = peopleInPhotoQuestion(photos: photos, calendar: calendar, attendeeNames: attendeeNames) {
             otherQuestions.append(peopleQuestion)
         }
-        if let activity = signals.first(where: { $0.kind == .activity })?.payload(as: ActivityPayload.self),
-           !activity.workoutSummaries.isEmpty {
-            otherQuestions.append(GuidedQuestion(
-                id: "activity",
-                text: "How did your workout go?",
-                subject: .activity,
-                feelingPrompt: "How did your body feel afterwards?"
-            ))
+        if let activityQuestion = activityQuestion(signals: signals) {
+            otherQuestions.append(activityQuestion)
+        }
+        if let mediaQuestion = mediaQuestion(signals: signals) {
+            otherQuestions.append(mediaQuestion)
+        }
+        if let weatherQuestion = weatherQuestion(signals: signals) {
+            otherQuestions.append(weatherQuestion)
         }
 
         let specific = addressQuestions + otherQuestions.prefix(max(0, specificQuestionLimit - addressQuestions.count))
@@ -104,6 +106,9 @@ enum GuidedQuestionBuilder {
         }
         if signals.contains(where: { $0.kind == .sharedItem || $0.kind == .attachment || $0.kind == .fileWatch }) {
             parts.append("notes")
+        }
+        if signals.contains(where: { $0.kind == .socialPost }) {
+            parts.append("your posts")
         }
 
         return ContextSummary(parts: parts)
@@ -197,8 +202,7 @@ enum GuidedQuestionBuilder {
 
     private static func eventQuestions(
         signals: [DaySignal],
-        photos: [(signal: DaySignal, payload: PhotoPayload)],
-        attendeeNames: [String]
+        photos: [(signal: DaySignal, payload: PhotoPayload)]
     ) -> [GuidedQuestion] {
         signals
             .filter { $0.kind == .calendar }
@@ -211,7 +215,6 @@ enum GuidedQuestionBuilder {
                     text: text,
                     subject: .event(title: payload.title),
                     photoAssetIdentifiers: assetIdentifiers(from: photos, near: signal.timestamp),
-                    nameSuggestions: payload.attendeeNames.isEmpty ? attendeeNames : payload.attendeeNames,
                     feelingPrompt: "How did it leave you feeling?"
                 )
             }
@@ -221,12 +224,126 @@ enum GuidedQuestionBuilder {
 
     private static func eventQuestionText(for payload: CalendarPayload) -> String {
         if let location = payload.location {
-            return "How did \"\(payload.title)\" at \(location) go, and who was there?"
+            return "How did \"\(payload.title)\" at \(location) shape the day?"
         }
-        if !payload.attendeeNames.isEmpty {
-            return "How did \"\(payload.title)\" go, and who was with you?"
+        return "How did \"\(payload.title)\" shape the day?"
+    }
+
+    private static func savedItemQuestions(signals: [DaySignal]) -> [GuidedQuestion] {
+        let sharedItems = signals
+            .filter { $0.kind == .sharedItem }
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { $0.payload(as: SharedItemPayload.self) }
+
+        let attachments = signals
+            .filter { $0.kind == .attachment }
+            .compactMap { $0.payload(as: AttachmentPayload.self) }
+
+        var questions: [GuidedQuestion] = []
+        if let item = sharedItems.first {
+            let subject = item.title?.nilIfBlank ?? item.sourceApp?.nilIfBlank ?? "something you saved"
+            questions.append(GuidedQuestion(
+                id: "saved.shared",
+                text: "You saved \(subject) today. What made it worth keeping?",
+                subject: .open,
+                feelingPrompt: "What does it bring up now?"
+            ))
         }
-        return "How did \"\(payload.title)\" go?"
+        if attachments.contains(where: { $0.kind == .note }) {
+            questions.append(GuidedQuestion(
+                id: "saved.note",
+                text: "You added a note to this day. What is the part behind the note?",
+                subject: .open,
+                feelingPrompt: "How does that detail feel now?"
+            ))
+        }
+        if attachments.contains(where: { $0.kind == .file }) {
+            questions.append(GuidedQuestion(
+                id: "saved.file",
+                text: "You attached a file here. What should future-you know about it?",
+                subject: .open,
+                feelingPrompt: "What was the weight of that work today?"
+            ))
+        }
+        return questions
+    }
+
+    private static func socialPostQuestions(signals: [DaySignal]) -> [GuidedQuestion] {
+        signals
+            .filter { $0.kind == .socialPost }
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { $0.payload(as: SocialPostPayload.self) }
+            .prefix(2)
+            .map { post in
+                GuidedQuestion(
+                    id: "social.\(post.externalID)",
+                    text: "You posted on \(post.network) today. What was the private side of that moment?",
+                    subject: .open,
+                    feelingPrompt: "How did it feel after sharing it?"
+                )
+            }
+    }
+
+    private static func activityQuestion(signals: [DaySignal]) -> GuidedQuestion? {
+        guard let activity = signals.first(where: { $0.kind == .activity })?.payload(as: ActivityPayload.self) else {
+            return nil
+        }
+        if !activity.workoutSummaries.isEmpty {
+            return GuidedQuestion(
+                id: "activity.workout",
+                text: "How did your workout go?",
+                subject: .activity,
+                feelingPrompt: "How did your body feel afterwards?"
+            )
+        }
+        guard let movementDescription = movementQuestionDescription(forStepCount: activity.stepCount) else {
+            return nil
+        }
+        return GuidedQuestion(
+            id: "activity.movement",
+            text: "\(movementDescription). What did that movement say about the day?",
+            subject: .activity,
+            feelingPrompt: "How did your body feel by the end?"
+        )
+    }
+
+    private static func movementQuestionDescription(forStepCount stepCount: Int) -> String? {
+        switch stepCount {
+        case ..<4_000:
+            return nil
+        case 4_000..<9_000:
+            return "You got some movement in today"
+        case 9_000..<18_000:
+            return "You spent a lot of the day on foot"
+        default:
+            return "This was an unusually active day"
+        }
+    }
+
+    private static func mediaQuestion(signals: [DaySignal]) -> GuidedQuestion? {
+        let titles = signals
+            .filter { $0.kind == .media }
+            .compactMap { $0.payload(as: MediaPayload.self) }
+            .flatMap(\.titles)
+        guard let title = titles.first else { return nil }
+        return GuidedQuestion(
+            id: "media",
+            text: "\"\(title)\" was part of the day. What did it match or change?",
+            subject: .open,
+            feelingPrompt: "What did it make you feel?"
+        )
+    }
+
+    private static func weatherQuestion(signals: [DaySignal]) -> GuidedQuestion? {
+        guard let weather = signals.first(where: { $0.kind == .weather })?.payload(as: WeatherPayload.self) else {
+            return nil
+        }
+        return GuidedQuestion(
+            id: "weather",
+            text: "The weather was \(weather.conditionDescription). Did that change the mood of the day?",
+            subject: .open,
+            feelingPrompt: "How did it feel being in that weather?"
+        )
     }
 
     /// One question about the day's camera roll, with the shots attached so
@@ -306,5 +423,12 @@ enum GuidedQuestionBuilder {
         var style = Date.FormatStyle.dateTime.hour().minute()
         style.timeZone = calendar.timeZone
         return date.formatted(style)
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

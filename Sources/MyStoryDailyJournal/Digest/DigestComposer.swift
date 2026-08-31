@@ -292,12 +292,14 @@ enum DigestComposer {
         }
 
         var parts: [String] = []
-        if activity.stepCount > 0 {
-            parts.append("\(activity.stepCount.formatted()) steps")
+        if let movement = movementPhrase(forStepCount: activity.stepCount, distanceMeters: activity.distanceMeters) {
+            parts.append(movement)
         }
         if activity.distanceMeters > 0 {
             let km = activity.distanceMeters / 1000
-            parts.append("traveled about \(String(format: "%.1f", km)) km")
+            if activity.stepCount <= 0 {
+                parts.append("covered about \(String(format: "%.1f", km)) km")
+            }
         }
         parts.append(contentsOf: activity.workoutSummaries)
         if activity.sleepHours > 0 {
@@ -307,6 +309,24 @@ enum DigestComposer {
         guard !parts.isEmpty else { return nil }
         let sentence = parts.joined(separator: ", ")
         return sentence.prefix(1).uppercased() + sentence.dropFirst() + "."
+    }
+
+    private static func movementPhrase(forStepCount stepCount: Int, distanceMeters: Double) -> String? {
+        guard stepCount > 0 else { return nil }
+
+        switch stepCount {
+        case 0..<4_000:
+            return nil
+        case 4_000..<9_000:
+            return "got some movement in"
+        case 9_000..<18_000:
+            return "spent a lot of the day on foot"
+        default:
+            if distanceMeters >= 12_000 {
+                return "had an unusually long day on foot"
+            }
+            return "had an unusually active day"
+        }
     }
 
     private static func mediaClause(_ signals: [DaySignal]) -> String? {

@@ -33,8 +33,19 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertTrue(text.contains("Flatiron"))
         XCTAssertTrue(text.contains("Standup"))
         XCTAssertTrue(text.contains("photo"))
-        XCTAssertTrue(text.contains("steps"))
+        XCTAssertTrue(text.contains("spent a lot of the day on foot"))
         XCTAssertTrue(text.contains("Rain"))
+    }
+
+    func testActivityClauseDoesNotDumpRawStepCounts() {
+        let activity = DaySignal(kind: .activity, timestamp: makeDate())
+        activity.setPayload(ActivityPayload(stepCount: 44_000, distanceMeters: 32_000, workoutSummaries: []))
+
+        let text = DigestComposer.compose(date: makeDate(), signals: [activity])
+
+        XCTAssertTrue(text.contains("Had an unusually long day on foot."))
+        XCTAssertFalse(text.contains("44,000"))
+        XCTAssertFalse(text.contains("steps"))
     }
 
     func testComposeIncludesFileWatchClause() {
