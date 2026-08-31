@@ -16,6 +16,16 @@ enum AppGroup {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier)
     }
 
+    /// Whether this process actually received the entitlements the targets
+    /// ask for. They only reach a process from a signed, provisioned build,
+    /// and they arrive together — so a container that won't resolve means
+    /// the iCloud entitlement is absent too. CloudKit is not merely
+    /// unavailable without it: both `CKContainer` and SwiftData's CloudKit
+    /// backing raise an uncaught Objective-C exception, which no Swift
+    /// `catch` can see and which takes the whole app down at launch. An
+    /// unsigned simulator build is exactly this case.
+    static var hasProvisionedEntitlements: Bool { containerURL != nil }
+
     /// The on-disk location for the shared SwiftData store. Falls back to
     /// the default application-support location (and effectively no
     /// widget/extension sharing) if the app group container can't be

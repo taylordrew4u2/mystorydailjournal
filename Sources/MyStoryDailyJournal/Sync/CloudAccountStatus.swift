@@ -15,6 +15,16 @@ final class CloudAccountStatus: ObservableObject {
     var isAvailable: Bool { status == .available }
 
     func refresh() {
+        // `CKContainer(identifier:)` raises an uncaught Objective-C exception
+        // when the process has no iCloud entitlement -- `try?` on
+        // `accountStatus()` catches Swift errors, not that -- so constructing
+        // one at all would crash the app at launch. No entitlement is the same
+        // situation this type exists to handle, so report it as such.
+        guard AppGroup.hasProvisionedEntitlements else {
+            status = .noAccount
+            return
+        }
+
         Task {
             let container = CKContainer(identifier: PersistenceController.cloudKitContainerIdentifier)
             let current = (try? await container.accountStatus()) ?? .couldNotDetermine

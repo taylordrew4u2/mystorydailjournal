@@ -35,14 +35,11 @@ enum PersistenceController {
 
         let storeURL = AppGroup.storeURL
 
-        // SwiftData's CloudKit backing raises an uncaught Objective-C
-        // exception -- not a Swift error the `catch` below can see -- when the
-        // process has no `com.apple.developer.icloud-services` entitlement,
-        // and the app dies at launch rather than falling back. Entitlements
-        // only reach a process from a signed, provisioned build; if the app
-        // group container did not resolve, none of them did, so don't ask for
-        // CloudKit at all. This is what an unsigned simulator build gets.
-        guard AppGroup.containerURL != nil else {
+        // Without the iCloud entitlement, SwiftData's CloudKit backing raises
+        // an uncaught Objective-C exception rather than throwing a Swift error
+        // the `catch` below could see, so the app dies here instead of falling
+        // back. Don't ask for CloudKit when the entitlements aren't there.
+        guard AppGroup.hasProvisionedEntitlements else {
             print("No app group entitlement; using a local-only store without CloudKit.")
             return createPersistentLocalContainer(storeURL: storeURL)
         }
