@@ -135,16 +135,15 @@ enum ProfileLearner {
             if let places = commonPlaces(in: shared, limit: 2), !places.isEmpty {
                 parts.append("usually around \(list(places))")
             }
-            let companions = shared
-                .flatMap { ($0.people ?? []).map(\.name) }
-                .filter { $0 != name }
-                .frequencies()
-                .filter { $0.value >= 2 }
-                .sorted { $0.value > $1.value }
-                .prefix(2)
-                .map(\.key)
+            var companionCounts: [String: Int] = [:]
+            for day in shared {
+                for person in day.people ?? [] where person.name != name {
+                    companionCounts[person.name, default: 0] += 1
+                }
+            }
+            let companions: [String] = topKeys(of: companionCounts, atLeast: 2, limit: 2)
             if !companions.isEmpty {
-                parts.append("often with \(list(Array(companions)))")
+                parts.append("often with \(list(companions))")
             }
             if let pattern = weekdayPattern(of: shared.map(\.date)) {
                 parts.append(pattern)
@@ -163,19 +162,15 @@ enum ProfileLearner {
     }
 
     private static func commonPlaces(in days: [DayRecord], limit: Int) -> [String]? {
-        let names = days.flatMap { day in
-            (day.signals ?? [])
-                .filter { $0.kind == .visit }
-                .compactMap { $0.payload(as: VisitPayload.self) }
-                .filter { !$0.isPassingThrough }
-                .map(\.placeName)
+        var counts: [String: Int] = [:]
+        for day in days {
+            for signal in day.signals ?? [] where signal.kind == .visit {
+                guard let payload = signal.payload(as: VisitPayload.self), !payload.isPassingThrough else { continue }
+                counts[payload.placeName, default: 0] += 1
+            }
         }
-        guard !names.isEmpty else { return nil }
-        return names.frequencies()
-            .filter { $0.value >= 2 }
-            .sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
-            .prefix(limit)
-            .map(\.key)
+        guard !counts.isEmpty else { return nil }
+        return topKeys(of: counts, atLeast: 2, limit: limit)
     }
 
     // MARK: - Places
@@ -296,12 +291,11 @@ enum ProfileLearner {
 
         var sceneDays: [String: [Date]] = [:]
         for day in days {
-            let labels = Set(
-                (day.signals ?? [])
-                    .filter { $0.kind == .photo }
-                    .compactMap { $0.payload(as: PhotoPayload.self) }
-                    .flatMap(\.sceneLabels)
-            )
+            var labels = Set<String>()
+            for signal in day.signals ?? [] where signal.kind == .photo {
+                guard let payload = signal.payload(as: PhotoPayload.self) else { continue }
+                labels.formUnion(payload.sceneLabels)
+            }
             for label in labels {
                 sceneDays[label, default: []].append(day.date)
             }
@@ -325,18 +319,26 @@ enum ProfileLearner {
     /// How the writer actually writes, measured from what they wrote
     /// themselves — never from a digest the app composed.
     private static func voiceObservations(in days: [DayRecord]) -> [Observation] {
-        let entries = days
-            .filter(\.isUserWritten)
-            .map(\.bodyText)
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        var entries: [String] = []
+        var dates: [Date] = []
+        for day in days where day.isUserWritten {
+            dates.append(day.date)
+            let text: String = day.bodyText
+            if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                entries.append(text)
+            }
+        }
         guard entries.count >= minimumObservations else { return [] }
 
-        let dates = days.filter(\.isUserWritten).map(\.date)
         let first = dates.min() ?? .now
         let last = dates.max() ?? .now
         var observations: [Observation] = []
 
-        let averageLength = entries.map(\.count).reduce(0, +) / entries.count
+        var totalLength = 0
+        for entry in entries {
+            totalLength += entry.count
+        }
+        let averageLength: Int = totalLength / entries.count
         let lengthDetail: String = switch averageLength {
         case ..<200: "Keeps entries short and to the point."
         case ..<800: "Writes a few unhurried paragraphs."
@@ -351,9 +353,16 @@ enum ProfileLearner {
             lastObserved: last
         ))
 
-        let sentences = entries.flatMap { $0.split(whereSeparator: { ".!?".contains($0) }) }
-        if !sentences.isEmpty {
-            let averageWords = sentences.map { $0.split(separator: " ").count }.reduce(0, +) / sentences.count
+        var sentenceCount = 0
+        var wordCount = 0
+        for entry in entries {
+            for sentence in entry.split(whereSeparator: { ".!?".contains($0) }) {
+                sentenceCount += 1
+                wordCount += sentence.split(separator: " ").count
+            }
+        }
+        if sentenceCount > 0 {
+            let averageWords: Int = wordCount / sentenceCount
             observations.append(Observation(
                 kind: .voice,
                 subject: "sentences",
@@ -366,8 +375,7 @@ enum ProfileLearner {
             ))
         }
 
-        let joined = entries.joined(separator: " ")
-        if !joined.contains(where: { $0.unicodeScalars.contains { $0.properties.isEmoji && $0.value > 0x238C } }) {
+        if !entries.contains(where: containsEmoji) {
             observations.append(Observation(
                 kind: .voice,
                 subject: "emoji",
@@ -396,20 +404,16 @@ enum ProfileLearner {
     /// The words this writer uses far more than a generic diary would —
     /// their own vocabulary, minus the words everyone uses.
     static func distinctiveWords(in entries: [String], limit: Int = 5) -> [String] {
-        let counts = entries
-            .flatMap { entry in
-                entry.lowercased()
-                    .split { !$0.isLetter && $0 != "'" }
-                    .map(String.init)
+        var counts: [String: Int] = [:]
+        for entry in entries {
+            let lowered: String = entry.lowercased()
+            for piece in lowered.split(whereSeparator: { !$0.isLetter && $0 != "'" }) {
+                let word = String(piece)
+                guard word.count > 3, !stopwords.contains(word) else { continue }
+                counts[word, default: 0] += 1
             }
-            .filter { $0.count > 3 && !stopwords.contains($0) }
-            .frequencies()
-
-        return counts
-            .filter { $0.value >= minimumObservations }
-            .sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
-            .prefix(limit)
-            .map(\.key)
+        }
+        return topKeys(of: counts, atLeast: minimumObservations, limit: limit)
     }
 
     // MARK: - Storing
@@ -474,14 +478,30 @@ enum ProfileLearner {
     /// cluster, so a habit is claimed only where there is one.
     static func weekdayPattern(of dates: [Date], calendar: Calendar = .current) -> String? {
         guard dates.count >= minimumObservations else { return nil }
-        let counts = dates.map { calendar.component(.weekday, from: $0) }.frequencies()
-        let ranked = counts.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
-        let top = Array(ranked.prefix(2))
-        let covered = top.map(\.value).reduce(0, +)
-        guard Double(covered) / Double(dates.count) >= 0.6 else { return nil }
+        var counts: [Int: Int] = [:]
+        for date in dates {
+            let weekday: Int = calendar.component(.weekday, from: date)
+            counts[weekday, default: 0] += 1
+        }
 
-        let names = top.filter { $0.value >= 2 }.map { weekdayName($0.key, calendar: calendar) }
-        guard !names.isEmpty else { return nil }
+        var ranked: [(weekday: Int, count: Int)] = []
+        for (weekday, count) in counts {
+            ranked.append((weekday: weekday, count: count))
+        }
+        ranked.sort { left, right in
+            if left.count != right.count { return left.count > right.count }
+            return left.weekday < right.weekday
+        }
+
+        var covered = 0
+        var names: [String] = []
+        for entry in ranked.prefix(2) {
+            covered += entry.count
+            if entry.count >= 2 {
+                names.append(weekdayName(entry.weekday, calendar: calendar))
+            }
+        }
+        guard Double(covered) / Double(dates.count) >= 0.6, !names.isEmpty else { return nil }
         return "mostly on \(list(names))"
     }
 
@@ -494,12 +514,20 @@ enum ProfileLearner {
 
     static func dominantPartOfDay(of dates: [Date], calendar: Calendar = .current) -> String? {
         guard !dates.isEmpty else { return nil }
-        let buckets = dates.map { partOfDay(for: $0, calendar: calendar) }.frequencies()
-        guard let top = buckets.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value }) else {
-            return nil
+        var buckets: [String: Int] = [:]
+        for date in dates {
+            let bucket: String = partOfDay(for: date, calendar: calendar)
+            buckets[bucket, default: 0] += 1
         }
-        guard Double(top.value) / Double(dates.count) >= 0.5 else { return nil }
-        return top.key
+
+        var best = ""
+        var bestCount = 0
+        for (bucket, count) in buckets where count > bestCount || (count == bestCount && bucket < best) {
+            best = bucket
+            bestCount = count
+        }
+        guard bestCount > 0, Double(bestCount) / Double(dates.count) >= 0.5 else { return nil }
+        return best
     }
 
     private static func partOfDay(for date: Date, calendar: Calendar) -> String {
@@ -509,6 +537,36 @@ enum ProfileLearner {
         case 17..<22: "in the evening"
         default: "late at night"
         }
+    }
+
+    /// The most-seen keys of a tally, ties broken alphabetically so the same
+    /// journal always produces the same sentence. Written out longhand
+    /// because the equivalent `.filter.sorted.prefix.map` chain is one of
+    /// the shapes the Swift type checker gives up on.
+    private static func topKeys(of counts: [String: Int], atLeast minimum: Int, limit: Int) -> [String] {
+        var ranked: [(key: String, count: Int)] = []
+        for (key, count) in counts where count >= minimum {
+            ranked.append((key: key, count: count))
+        }
+        ranked.sort { left, right in
+            if left.count != right.count { return left.count > right.count }
+            return left.key < right.key
+        }
+
+        var keys: [String] = []
+        for entry in ranked.prefix(limit) {
+            keys.append(entry.key)
+        }
+        return keys
+    }
+
+    /// Deliberately not a one-liner over `unicodeScalars`: nesting that
+    /// predicate inside another closure is what made this file time out.
+    private static func containsEmoji(_ text: String) -> Bool {
+        for scalar in text.unicodeScalars where scalar.properties.isEmoji && scalar.value > 0x238C {
+            return true
+        }
+        return false
     }
 
     private static func list(_ items: [String]) -> String {
@@ -532,10 +590,4 @@ enum ProfileLearner {
         "little", "thing", "things", "good", "nice", "well", "made", "make",
         "take", "took", "getting", "going", "again", "though", "felt",
     ]
-}
-
-private extension Sequence where Element: Hashable {
-    func frequencies() -> [Element: Int] {
-        reduce(into: [:]) { $0[$1, default: 0] += 1 }
-    }
 }

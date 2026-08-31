@@ -28,25 +28,34 @@ enum ProfileBrief {
         /// its events list, where it went, and what its tags and photos
         /// were of.
         static func from(_ record: DayRecord) -> Cues {
-            let signals = record.signals ?? []
+            let signals: [DaySignal] = record.signals ?? []
 
-            var people = (record.people ?? []).map(\.name)
-            people += signals
-                .filter { $0.kind == .calendar }
-                .compactMap { $0.payload(as: CalendarPayload.self) }
-                .flatMap(\.attendeeNames)
+            var people: [String] = []
+            for person in record.people ?? [] {
+                people.append(person.name)
+            }
 
-            let places = signals
-                .filter { $0.kind == .visit }
-                .compactMap { $0.payload(as: VisitPayload.self) }
-                .filter { !$0.isPassingThrough }
-                .map(\.placeName)
+            var places: [String] = []
+            var themes: [String] = []
+            for tag in record.tags ?? [] {
+                themes.append(tag.name)
+            }
 
-            var themes = (record.tags ?? []).map(\.name)
-            themes += signals
-                .filter { $0.kind == .photo }
-                .compactMap { $0.payload(as: PhotoPayload.self) }
-                .flatMap(\.sceneLabels)
+            for signal in signals {
+                switch signal.kind {
+                case .calendar:
+                    guard let payload = signal.payload(as: CalendarPayload.self) else { continue }
+                    people.append(contentsOf: payload.attendeeNames)
+                case .visit:
+                    guard let payload = signal.payload(as: VisitPayload.self), !payload.isPassingThrough else { continue }
+                    places.append(payload.placeName)
+                case .photo:
+                    guard let payload = signal.payload(as: PhotoPayload.self) else { continue }
+                    themes.append(contentsOf: payload.sceneLabels)
+                default:
+                    continue
+                }
+            }
 
             return Cues(people: people, places: places, themes: themes)
         }
@@ -67,19 +76,22 @@ enum ProfileBrief {
     /// Ranks and trims. Pure, so the choice of what the app tells the model
     /// about someone is testable rather than emergent.
     static func select(from facts: [ProfileFact], cues: Cues, budget: Int) -> [ProfileFact] {
-        let candidates = facts.filter { !$0.isMuted }
-        let scored = candidates
-            .map { (fact: $0, score: score($0, cues: cues)) }
-            .sorted { left, right in
-                left.score == right.score
-                    ? left.fact.subject.lowercased() < right.fact.subject.lowercased()
-                    : left.score > right.score
-            }
+        var scored: [(fact: ProfileFact, score: Int)] = []
+        for fact in facts where !fact.isMuted {
+            let value: Int = score(fact, cues: cues)
+            guard value > 0 else { continue }
+            scored.append((fact: fact, score: value))
+        }
+
+        scored.sort { left, right in
+            if left.score != right.score { return left.score > right.score }
+            return left.fact.subject.lowercased() < right.fact.subject.lowercased()
+        }
 
         var chosen: [ProfileFact] = []
         var spent = 0
-        for candidate in scored where candidate.score > 0 {
-            let cost = candidate.fact.sentence.count + 3
+        for candidate in scored {
+            let cost: Int = candidate.fact.sentence.count + 3
             guard spent + cost <= budget else { continue }
             chosen.append(candidate.fact)
             spent += cost
@@ -126,7 +138,10 @@ enum ProfileBrief {
 
         var lines: [String] = []
         for kind in ProfileFactKind.allCases {
-            let sentences = facts.filter { $0.kind == kind }.map(\.sentence)
+            var sentences: [String] = []
+            for fact in facts where fact.kind == kind {
+                sentences.append(fact.sentence)
+            }
             guard !sentences.isEmpty else { continue }
             let heading = kind == .correction
                 ? "Corrections the writer has made — follow these exactly"
