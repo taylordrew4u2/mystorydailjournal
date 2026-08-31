@@ -119,3 +119,37 @@ struct AttachmentPayload: Codable {
     var assetLocalIdentifier: String? = nil
     var fileName: String? = nil
 }
+
+/// One thing the writer posted on a social network, read out of the data
+/// archive that network gave them (§10: their own words and derived
+/// summaries — the archive's media files are never copied into the store,
+/// only counted).
+///
+/// This is deliberately network-agnostic. Instagram is the first archive
+/// the app reads, but the shape a post takes in a journal — when, what the
+/// writer said, where, how many pictures — is the same everywhere, so the
+/// importers differ and the payload does not.
+struct SocialPostPayload: Codable {
+    /// The network's display name, as the entry should say it: "Instagram".
+    var network: String
+
+    /// What the network called this: "post", "story", "reel", "comment".
+    var form: String
+
+    /// The caption or comment the writer themselves wrote. Their own words,
+    /// like a shared note — which is why voice learning is allowed to read
+    /// it and why it can go into an entry verbatim.
+    var text: String
+
+    /// From the media's own EXIF, when the archive carries it.
+    var placeName: String? = nil
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+
+    /// How many photos or videos the post had. A count, never the files.
+    var mediaCount: Int = 0
+
+    /// Stable within an archive, so importing the same export twice — or a
+    /// later export that overlaps an earlier one — adds each post once.
+    var externalID: String
+}

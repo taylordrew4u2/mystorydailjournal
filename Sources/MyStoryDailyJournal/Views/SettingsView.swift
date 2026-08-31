@@ -110,6 +110,12 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Social") {
+                NavigationLink("Import from Instagram") {
+                    SocialImportView()
+                }
+            }
+
             Section("Watched Folder") {
                 if let folderName = watchedFolder.folderDisplayName {
                     LabeledContent("Watching", value: folderName)

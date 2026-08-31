@@ -12,7 +12,7 @@ enum DigestEngine {
     /// Extension or M8's ingestion intent, and watched-folder files via
     /// `WatchedFolderManager` — all independent write paths this engine
     /// only reads from when composing text.
-    private static let pushedSignalKinds: Set<DaySignalKind> = [.visit, .sharedItem, .fileWatch, .attachment]
+    private static let pushedSignalKinds: Set<DaySignalKind> = [.visit, .sharedItem, .fileWatch, .attachment, .socialPost]
 
     /// Caller-isolated (`nonisolated(nonsending)`) so the entry view can
     /// pass its *own* main-actor context: the record on screen is then the
