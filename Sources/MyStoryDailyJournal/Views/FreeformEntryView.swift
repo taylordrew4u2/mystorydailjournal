@@ -26,6 +26,10 @@ struct FreeformEntryView: View {
             }
             .onDisappear {
                 try? context.save()
+                // The writer's own words are the best evidence there is
+                // about how they write and who they mean; fold them in,
+                // no more often than the learner's own interval allows.
+                ProfileLearner.learnIfNeeded(in: context)
                 if !record.bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     NotificationManager.cancelPendingRemindersForToday()
                 }

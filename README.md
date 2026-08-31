@@ -268,6 +268,36 @@ None of M10 is missing by oversight — the build spec explicitly sequences
 it last and calls it out as deferred, which this follows literally: it's
 the final milestone, built after everything else was solid.
 
+### A journal that learns the person
+
+The app used to work out who mattered and how the writer sounded from
+scratch every time it wrote a line — which meant it could never know
+anything that took longer than a month to become visible. It now keeps a
+standing picture instead (`ProfileFact`, `ProfileLearner`), rebuilt from
+the last six months of the writer's own journal and deepening as that
+journal grows:
+
+- **People** — who recurs, how often, who they turn up with, and where
+  ("Dana — appears on 42 days, usually around the gym, often with Sam").
+- **Places** — what each recurring place is (from the writer's own
+  `PlaceKind` answer or Maps' category) and when they tend to be there.
+- **Rhythms** — when they write, which days they train.
+- **Themes** — the tags they reach for, and what their photos keep being of.
+- **Voice** — entry length, sentence length, emoji, and the words they use
+  far more than a generic diary would.
+
+Nothing is claimed on thin evidence: a pattern needs at least three days
+behind it, and a fact carries the count it rests on. `ProfileBrief` then
+retrieves *against the day being written* — voice always, plus the people,
+places and themes that day actually contains — and spends a fixed
+character budget, because handing a small on-device model everything known
+about someone makes the writing worse, not better.
+
+All of it is derived on this phone from days the writer already has, and
+**every single fact is readable, mutable and deletable** under Settings →
+"What this app knows about you", which also turns learning off entirely.
+"Delete All Data" takes the conclusions with the days.
+
 ### Guided questions that make the day more specific
 
 Answering a guided question doesn't just add a paragraph — it changes what

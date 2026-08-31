@@ -23,6 +23,7 @@ enum PersistenceController {
         DaySignal.self,
         Person.self,
         Tag.self,
+        ProfileFact.self,
     ])
 
     static func makeContainer(inMemory: Bool = false) -> ModelContainer {

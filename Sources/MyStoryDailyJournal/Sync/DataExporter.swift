@@ -73,6 +73,9 @@ enum DataExporter {
         try context.delete(model: DayRecord.self)
         try context.delete(model: Person.self)
         try context.delete(model: Tag.self)
+        // What the app concluded about the writer goes with the days it
+        // concluded them from — deleting everything has to mean everything.
+        try context.delete(model: ProfileFact.self)
         try context.save()
     }
 }
