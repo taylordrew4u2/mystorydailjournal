@@ -119,6 +119,13 @@ enum ProfileBrief {
             score += 400
         case .theme where matches(fact.subject, cues.themes):
             score += 300
+        // Someone, or somewhere, this day never raised. Scoring it low is not
+        // enough -- everything that fits the budget is sent -- and a name the
+        // day has nothing to do with invites the model to write them into an
+        // entry they had no part in. A theme or a rhythm is a trait of the
+        // writer and travels fine; a name is a claim about who was there.
+        case .person, .place:
+            return 0
         case .rhythm:
             score += 100
         default:

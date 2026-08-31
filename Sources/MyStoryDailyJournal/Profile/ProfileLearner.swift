@@ -505,7 +505,14 @@ enum ProfileLearner {
         return "mostly on \(list(names))"
     }
 
+    /// The sentence built around this is English ("mostly on", "usually"),
+    /// so the weekday name has to be too. A calendar carries no locale of
+    /// its own unless one is set -- `Calendar(identifier:)` gives exactly
+    /// that -- and `weekdaySymbols` then resolves to abbreviated root-locale
+    /// forms, so pluralizing produced "Tues" rather than "Tuesdays".
     private static func weekdayName(_ weekday: Int, calendar: Calendar) -> String {
+        var calendar = calendar
+        calendar.locale = Locale(identifier: "en_US_POSIX")
         let symbols = calendar.weekdaySymbols
         let index = weekday - 1
         guard symbols.indices.contains(index) else { return "" }
