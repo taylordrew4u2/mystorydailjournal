@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A superseded run tells you nothing useful, and macOS minutes are the
+# expensive kind.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pick whatever the newest installed Xcode is rather than pinning a
+      # version the runner image may drop. iOS 18 SDK (Xcode 16+) is the
+      # floor; FoundationModels is compiled out entirely on anything older
+      # than Xcode 26 by its own `#if canImport` guard, so both build.
+      - name: Select the newest Xcode
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Using $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      # The .xcodeproj is generated, not committed (see README) — so CI
+      # builds it exactly the way a contributor does.
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the project
+        run: xcodegen generate
+
+      # Turns the Screen Time target into an ExtensionKit extension. Its
+      # edits are pinned to exact strings and it refuses to write anything
+      # if the project file has drifted; a simulator test run doesn't
+      # depend on the conversion, so a refusal is reported and not fatal.
+      - name: Convert the Screen Time extension
+        run: |
+          python3 fix_screentime_extension.py \
+            || echo "::warning::fix_screentime_extension.py did not apply — the Screen Time target stays a plain app extension for this build."
+
+      # Device names come and go with the runner image; ask the machine
+      # what it actually has rather than hard-coding "iPhone 16".
+      - name: Choose a simulator
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available
+          udid=$(xcrun simctl list devices available | grep -E "^ +iPhone" | head -1 | grep -oE "[0-9A-Fa-f-]{36}" || true)
+          if [ -z "$udid" ]; then
+            echo "::error::No iPhone simulator available on this runner."
+            exit 1
+          fi
+          echo "Using simulator $udid"
+          echo "SIMULATOR_ID=$udid" >> "$GITHUB_ENV"
+
+      - name: Build and test
+        env:
+          NSUnbufferedIO: YES
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MyStoryDailyJournal.xcodeproj \
+            -scheme MyStoryDailyJournal \
+            -destination "id=$SIMULATOR_ID" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS=""
+
+      # The result bundle is what makes a red run diagnosable after the
+      # fact — which failed, and why.
+      - name: Keep the test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          retention-days: 14
+          if-no-files-found: ignore

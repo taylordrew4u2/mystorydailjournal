@@ -396,7 +396,21 @@ still runs without it, just without widget/app data sharing.
 
 Run the `MyStoryDailyJournalTests` scheme for unit tests covering the
 day-record repository (idempotent lookup, quick-reply append/dedupe),
-guided-entry composition, and tag logging.
+digest composition, guided-entry composition and its answer applier,
+place naming and the place alias store, the profile learner and brief,
+the relationship prompts and corrections, entry sharing and redaction,
+and tag logging.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and every push to
+`main`: it generates the project with XcodeGen exactly the way the steps
+above do, applies the Screen Time conversion, picks whichever iPhone
+simulator the runner actually has, and runs `xcodebuild test`. Code
+signing is off — a simulator build needs none, and the entitlements in
+this repo point at placeholder identifiers. A failing run uploads its
+`.xcresult` bundle as an artifact so the failure can be read without
+re-running anything.
 
 ### Trying the quick-reply feature
 
