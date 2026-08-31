@@ -44,20 +44,6 @@ jobs:
       - name: Generate the project
         run: xcodegen generate
 
-      # Turns the Screen Time target into an ExtensionKit extension. Its
-      # edits are pinned to exact strings and it refuses to write anything
-      # if the project file has drifted. Whether it applied decides where
-      # the appex is embedded and which extension dictionary the simulator
-      # expects, so the outcome is recorded rather than swallowed.
-      - name: Convert the Screen Time extension
-        run: |
-          if python3 fix_screentime_extension.py; then
-            echo "SCREENTIME_CONVERTED=yes" >> "$GITHUB_ENV"
-          else
-            echo "SCREENTIME_CONVERTED=no" >> "$GITHUB_ENV"
-            echo "::warning::fix_screentime_extension.py did not apply. The Screen Time target stays a plain app extension, and its Info.plist has EXAppExtensionAttributes rather than NSExtension — which the simulator refuses to install."
-          fi
-
       # Device names come and go with the runner image; ask the machine
       # what it actually has rather than hard-coding "iPhone 16".
       - name: Choose a simulator
@@ -96,13 +82,13 @@ jobs:
       - name: Inspect the built app bundle
         if: ${{ !cancelled() }}
         run: |
-          echo "Screen Time conversion applied: ${SCREENTIME_CONVERTED:-unknown}"
           app=$(find DerivedData/Build/Products -maxdepth 2 -name "*.app" -type d | head -1)
           if [ -z "$app" ]; then
             echo "No .app was produced."
             exit 0
           fi
           echo "App bundle: $app"
+          bad=0
           for dir in "$app/PlugIns" "$app/Extensions"; do
             [ -d "$dir" ] || { echo "(no $(basename "$dir")/ directory)"; continue; }
             echo "=== $(basename "$dir")/ ==="
@@ -110,12 +96,23 @@ jobs:
               [ -d "$ext" ] || continue
               echo "--- $(basename "$ext")"
               plutil -extract CFBundleIdentifier raw "$ext/Info.plist" 2>/dev/null || echo "  (no CFBundleIdentifier)"
-              plutil -extract NSExtension.NSExtensionPointIdentifier raw "$ext/Info.plist" 2>/dev/null \
-                || echo "  NSExtension: ABSENT"
-              plutil -extract EXAppExtensionAttributes.EXExtensionPointIdentifier raw "$ext/Info.plist" 2>/dev/null \
-                || echo "  EXAppExtensionAttributes: ABSENT"
+              # PlugIns/ wants NSExtension; Extensions/ wants
+              # EXAppExtensionAttributes. An appex carrying neither is the one
+              # the simulator rejects with "extensionDictionary must be set".
+              if [ "$(basename "$dir")" = "PlugIns" ]; then
+                key=NSExtension.NSExtensionPointIdentifier
+              else
+                key=EXAppExtensionAttributes.EXExtensionPointIdentifier
+              fi
+              if point=$(plutil -extract "$key" raw "$ext/Info.plist" 2>/dev/null); then
+                echo "  $key = $point"
+              else
+                echo "::error::$(basename "$ext") in $(basename "$dir")/ has no $key — the simulator will refuse to install the app."
+                bad=1
+              fi
             done
           done
+          exit $bad
 
       - name: Test
         env:

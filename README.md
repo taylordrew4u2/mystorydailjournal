@@ -405,8 +405,9 @@ and tag logging.
 
 `.github/workflows/ci.yml` runs on every pull request and every push to
 `main`: it generates the project with XcodeGen exactly the way the steps
-above do, applies the Screen Time conversion, picks whichever iPhone
-simulator the runner actually has, and runs `xcodebuild test`. Code
+above do, picks whichever iPhone simulator the runner actually has, checks
+that each embedded extension declares the extension dictionary its embed
+folder requires, and runs `xcodebuild test`. Code
 signing is off — a simulator build needs none, and the entitlements in
 this repo point at placeholder identifiers. A failing run uploads its
 `.xcresult` bundle as an artifact so the failure can be read without
