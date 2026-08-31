@@ -29,6 +29,8 @@ struct EntryView: View {
     @State private var pickedPhotos: [PhotosPickerItem] = []
     @State private var showFileImporter = false
     @State private var showRegenerateOptions = false
+    @State private var showShareSheet = false
+    @State private var showCorrection = false
 
     var body: some View {
         Group {
@@ -50,15 +52,19 @@ struct EntryView: View {
                     Image(systemName: "paperclip")
                 }
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showShareSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(record?.bodyText.isEmpty ?? true)
+            }
             // The always-there place to rebuild a day after adding new
             // things — days with the user's own words confirm first.
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    if record?.isUserWritten == true {
-                        showRegenerateOptions = true
-                    } else {
-                        regenerateDay()
-                    }
+                    showRegenerateOptions = true
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -66,6 +72,9 @@ struct EntryView: View {
             }
         }
         .confirmationDialog("Rewrite this day?", isPresented: $showRegenerateOptions, titleVisibility: .visible) {
+            Button("Tell it what it got wrong") {
+                showCorrection = true
+            }
             Button("Keep my words and add the new details") {
                 regenerateDay(force: true, preserveText: true)
             }
@@ -74,7 +83,7 @@ struct EntryView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This day has your own writing. \u{201C}Keep my words\u{201D} weaves what you wrote into the rebuilt story, along with anything you've attached.")
+            Text("Telling it what went wrong fixes this day and every day after it. \u{201C}Keep my words\u{201D} weaves what you wrote into the rebuilt story, along with anything you've attached.")
         }
         .alert("Add a note to this day", isPresented: $showAddNote) {
             TextField("What should this day remember?", text: $noteText)
@@ -173,6 +182,16 @@ struct EntryView: View {
             } else if oldValue == .notes {
                 try? context.save()
                 weaveNotesIfChanged(record)
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            EntryShareSheet(record: record)
+        }
+        // Saying why the last attempt was wrong is what makes the next one
+        // right — here, and on every day after this one.
+        .sheet(isPresented: $showCorrection) {
+            EntryCorrectionSheet(record: record) {
+                regenerateDay(force: true, preserveText: record.isUserWritten)
             }
         }
         .sheet(isPresented: $showRefinement) {

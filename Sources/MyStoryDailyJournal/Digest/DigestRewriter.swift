@@ -106,7 +106,10 @@ enum DigestRewriter {
 
             About the writer, learned on-device from their own journal — use \
             it to match their voice and to know who and what they mean, never \
-            state any of it as something that happened today:
+            state any of it as something that happened today. Anything under \
+            "Corrections" is a standing instruction from the writer about how \
+            to write their days; follow it exactly, even where it overrides \
+            the rules above:
             \(profile)
             """
         }
@@ -160,7 +163,10 @@ enum DigestRewriter {
 
             About the writer, learned on-device from their own journal — use \
             it to match their voice and to know who and what they mean, never \
-            state any of it as something that happened today:
+            state any of it as something that happened today. Anything under \
+            "Corrections" is a standing instruction from the writer about how \
+            to write their days; follow it exactly, even where it overrides \
+            the rules above:
             \(profile)
             """
         }

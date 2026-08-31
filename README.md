@@ -268,6 +268,41 @@ None of M10 is missing by oversight — the build spec explicitly sequences
 it last and calls it out as deferred, which this follows literally: it's
 the final milestone, built after everything else was solid.
 
+### Sharing one day, without giving away the people in it
+
+Every entry has a share button. Because the milestones above made entries
+far more identifying — real venue names, the people who were there, where
+the photos were taken — the share screen is where all of that becomes
+visible and removable: `ShareableEntry` lists every name in the text that
+identifies a person or a place, and tapping one swaps it for neutral
+wording *in the shared copy only* ("a friend", "the café", "home"). Share
+as text, or as a portrait card image with the entry in serif under its
+date. The stored entry is never touched, and everything goes out through
+the system share sheet — which is how a day reaches Messages, Instagram,
+or anywhere else on iOS.
+
+### The floating pen: who these people actually are
+
+A journal can see that "Dana" appears on forty days and still have no idea
+whether that's a sister, a manager or a dog walker — and it must never
+guess. So a pen sits over the day list, with a dot when the app has an
+open question, and asks: *Who is Dana to you?* One person at a time,
+most-present first, everything optional, skipping allowed (and remembered
+for a fortnight rather than forever). The answer lives on the `Person` —
+relationship, what they go by, anything else worth knowing — and from then
+on every entry that mentions them is written knowing it.
+
+### Telling it what it got wrong
+
+Regenerating a bad entry fixes one day. The regenerate menu now leads with
+**"Tell it what it got wrong"**, and what the writer says is kept as a
+standing instruction (`EntryCorrection`, stored as a `.correction` fact):
+*"Alex is my brother, not a coworker"*, *"don't say I was productive"*.
+Corrections outrank everything the app worked out for itself, are sent to
+the model ahead of it under a heading that says to follow them exactly,
+and are readable and deletable in Settings like every other fact. Saying
+the same correction twice sharpens it rather than stacking a duplicate.
+
 ### A journal that learns the person
 
 The app used to work out who mattered and how the writer sounded from
