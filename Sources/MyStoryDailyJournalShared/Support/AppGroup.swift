@@ -8,20 +8,21 @@ import Foundation
 enum AppGroup {
     static let identifier = "group.com.mystorydailyjournal.app"
 
+    /// The shared container, or `nil` when this process has no app group
+    /// entitlement. Entitlements only reach a process from a signed,
+    /// provisioned build, so a `nil` here also means the iCloud entitlement
+    /// is absent — see `PersistenceController.makeContainer`.
+    static var containerURL: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: identifier)
+    }
+
     /// The on-disk location for the shared SwiftData store. Falls back to
     /// the default application-support location (and effectively no
     /// widget/extension sharing) if the app group container can't be
     /// resolved — e.g. entitlements not yet provisioned in a dev build —
     /// rather than crashing.
     static var storeURL: URL {
-        let directoryURL: URL
-        if let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: identifier
-        ) {
-            directoryURL = containerURL
-        } else {
-            directoryURL = URL.applicationSupportDirectory
-        }
+        let directoryURL = containerURL ?? URL.applicationSupportDirectory
 
         try? FileManager.default.createDirectory(
             at: directoryURL,
