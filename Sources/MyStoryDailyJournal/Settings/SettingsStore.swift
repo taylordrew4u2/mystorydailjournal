@@ -141,6 +141,13 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(profileLearningEnabled, forKey: Keys.profileLearning) }
     }
 
+    /// Optional links the writer gives directly to their own public
+    /// profiles. Stored as links only; any future reader of those pages has
+    /// to be an explicit, user-started import path.
+    @Published var socialProfileLinks: [String] {
+        didSet { defaults.set(socialProfileLinks, forKey: Keys.socialProfileLinks) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -165,6 +172,7 @@ final class SettingsStore: ObservableObject {
         historyBackfillCompleted = defaults.bool(forKey: Keys.historyBackfillCompleted)
         digestRewriteEnabled = defaults.bool(forKey: Keys.digestRewriteEnabled)
         profileLearningEnabled = defaults.object(forKey: Keys.profileLearning) as? Bool ?? true
+        socialProfileLinks = defaults.stringArray(forKey: Keys.socialProfileLinks) ?? []
     }
 
     /// The active question set for guided entries: a starter set, or the
@@ -200,5 +208,6 @@ final class SettingsStore: ObservableObject {
         /// Shared with `ProfileLearner`, which runs off the main actor and
         /// reads this key directly.
         static let profileLearning = ProfileLearner.learningEnabledKey
+        static let socialProfileLinks = "settings.socialProfileLinks"
     }
 }

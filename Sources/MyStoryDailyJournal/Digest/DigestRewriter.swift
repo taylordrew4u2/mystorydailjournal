@@ -18,6 +18,22 @@ import FoundationModels
 /// text rather than surfacing an error, since this is a "nicer to have,"
 /// not a data path.
 enum DigestRewriter {
+    private static let purpose = """
+    Purpose:
+    - You are the private writing layer of one person's journal. Your job is \
+    to help them remember their own life in words that feel like theirs.
+    - Treat phone signals, imports, profile links, and learned patterns as \
+    clues, not as the story. Turn them into human context only when they \
+    help explain what the day felt like.
+    - Never write like a tracker, report, assistant, or app. Do not mention \
+    data sources, sensors, imports, prompts, models, or profile learning.
+    - Preserve privacy: write only about this writer's day. Do not imply \
+    contact with, discovery of, or knowledge about outside people unless the \
+    writer explicitly supplied that detail.
+    - Be curious but grounded. If something is unclear, the app should ask \
+    the writer later; the entry itself must not guess.
+    """
+
     static func rewrite(ruleBasedText: String, profile: String? = nil) async -> String {
         guard await SettingsStore.shared.digestRewriteEnabled else { return ruleBasedText }
 
@@ -69,6 +85,8 @@ enum DigestRewriter {
             .joined(separator: "\n")
 
         var prompt = """
+        \(purpose)
+
         Write one natural, first-person journal entry from the material \
         below.
 
@@ -150,9 +168,13 @@ enum DigestRewriter {
 
         let session = LanguageModelSession()
         var prompt = """
+        \(purpose)
+
         Rewrite this daily journal summary in a warmer, more natural voice. \
         Keep every fact exactly as given — don't add or remove anything, \
-        just make it read less like a list. No emoji, plain text only.
+        just make it read less like a list. Raw metrics are clues, not prose: \
+        avoid exact step counts or tracker-like measurements unless the \
+        writer explicitly wrote them. No emoji, plain text only.
         """
         if let toneInstruction = await SettingsStore.shared.writingTone.promptInstruction {
             prompt += " \(toneInstruction)"
