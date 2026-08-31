@@ -121,3 +121,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mystorydailyjournal.app.tests
         GENERATE_INFOPLIST_FILE: true
+        # The host app renames its product to "My Story" (PRODUCT_NAME
+        # above), but XcodeGen derives TEST_HOST from the target *name* —
+        # so the derived path points at a MyStoryDailyJournal.app that is
+        # never built, and the scheme fails before it compiles anything
+        # with "Could not find test host". Point both at the real product.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/My Story.app/My Story"
+        BUNDLE_LOADER: "$(TEST_HOST)"
