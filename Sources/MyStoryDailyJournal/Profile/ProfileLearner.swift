@@ -113,16 +113,25 @@ enum ProfileLearner {
     /// own tags — a name is here because the writer put it on a day.
     private static func peopleObservations(in days: [DayRecord]) -> [Observation] {
         var daysWith: [String: [DayRecord]] = [:]
+        var byName: [String: Person] = [:]
         for day in days {
             for person in day.people ?? [] {
                 daysWith[person.name, default: []].append(day)
+                byName[person.name] = person
             }
         }
 
         return daysWith.compactMap { name, shared in
             guard shared.count >= minimumObservations else { return nil }
 
-            var parts = ["appears on \(shared.count) days"]
+            var parts: [String] = []
+            // What the writer said about them, when they've been asked —
+            // this is the difference between an entry that knows Dana is
+            // your sister and one repeating a name back at you.
+            if let described = byName[name]?.descriptionForWriting {
+                parts.append(described)
+            }
+            parts.append("appears on \(shared.count) days")
             if let places = commonPlaces(in: shared, limit: 2), !places.isEmpty {
                 parts.append("usually around \(list(places))")
             }

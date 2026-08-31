@@ -14,6 +14,10 @@ enum ProfileFactKind: String, Codable, Sendable, CaseIterable {
     case theme
     /// How they write — length, sentences, whether they use contractions.
     case voice
+    /// Something the app got wrong and the writer put right. Not learned
+    /// from the journal — given directly, and treated as an instruction
+    /// rather than an observation.
+    case correction
 
     var displayName: String {
         switch self {
@@ -22,6 +26,7 @@ enum ProfileFactKind: String, Codable, Sendable, CaseIterable {
         case .rhythm: "Rhythms"
         case .theme: "Themes"
         case .voice: "Voice"
+        case .correction: "Corrections"
         }
     }
 }

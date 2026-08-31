@@ -33,6 +33,11 @@ struct RootView: View {
                     MonthGridView()
                 }
             }
+            // Always reachable, over either layout: the app's own way of
+            // asking who the people in this journal are.
+            .overlay(alignment: .bottomTrailing) {
+                FloatingPenButton()
+            }
             .navigationTitle("My Story")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

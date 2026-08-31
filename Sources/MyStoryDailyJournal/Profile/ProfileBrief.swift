@@ -95,6 +95,10 @@ enum ProfileBrief {
 
         var score = min(fact.observationCount, 50)
         switch fact.kind {
+        // A correction is the writer telling the app it got something
+        // wrong. It outranks everything the app worked out for itself.
+        case .correction:
+            score += 5_000
         case .voice:
             score += 1_000
         case .person where matches(fact.subject, cues.people):
@@ -124,7 +128,10 @@ enum ProfileBrief {
         for kind in ProfileFactKind.allCases {
             let sentences = facts.filter { $0.kind == kind }.map(\.sentence)
             guard !sentences.isEmpty else { continue }
-            lines.append("\(kind.displayName): \(sentences.joined(separator: " "))")
+            let heading = kind == .correction
+                ? "Corrections the writer has made — follow these exactly"
+                : kind.displayName
+            lines.append("\(heading): \(sentences.joined(separator: " "))")
         }
         return lines.isEmpty ? nil : lines.joined(separator: "\n")
     }
