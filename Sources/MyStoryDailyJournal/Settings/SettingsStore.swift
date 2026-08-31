@@ -141,19 +141,6 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(profileLearningEnabled, forKey: Keys.profileLearning) }
     }
 
-    /// §13 M10: opt-in, Bluetooth-range nearby-person suggestions. Off by
-    /// default and does nothing until explicitly turned on (§12).
-    @Published var nearbyPeopleEnabled: Bool {
-        didSet { defaults.set(nearbyPeopleEnabled, forKey: Keys.nearbyPeopleEnabled) }
-    }
-
-    /// What this device broadcasts to nearby instances of the app when
-    /// `nearbyPeopleEnabled` is on — never anything beyond what the user
-    /// types here themselves.
-    @Published var myDisplayName: String {
-        didSet { defaults.set(myDisplayName, forKey: Keys.myDisplayName) }
-    }
-
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -178,8 +165,6 @@ final class SettingsStore: ObservableObject {
         historyBackfillCompleted = defaults.bool(forKey: Keys.historyBackfillCompleted)
         digestRewriteEnabled = defaults.bool(forKey: Keys.digestRewriteEnabled)
         profileLearningEnabled = defaults.object(forKey: Keys.profileLearning) as? Bool ?? true
-        nearbyPeopleEnabled = defaults.bool(forKey: Keys.nearbyPeopleEnabled)
-        myDisplayName = defaults.string(forKey: Keys.myDisplayName) ?? ""
     }
 
     /// The active question set for guided entries: a starter set, or the
@@ -215,7 +200,5 @@ final class SettingsStore: ObservableObject {
         /// Shared with `ProfileLearner`, which runs off the main actor and
         /// reads this key directly.
         static let profileLearning = ProfileLearner.learningEnabledKey
-        static let nearbyPeopleEnabled = "settings.nearbyPeopleEnabled"
-        static let myDisplayName = "settings.myDisplayName"
     }
 }

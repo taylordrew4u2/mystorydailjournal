@@ -237,7 +237,7 @@ struct EntryView: View {
             Button {
                 showRefinement = true
             } label: {
-                Label("Answer guided questions instead", systemImage: "text.badge.checkmark")
+                Label(promptButtonTitle(for: record), systemImage: "text.badge.checkmark")
                     .font(.footnote)
             }
         }
@@ -269,18 +269,26 @@ struct EntryView: View {
     }
 
     /// Signal-specific prompts when the day has material to ask about
-    /// (places, events, the photos themselves and the faces in them);
-    /// otherwise the question set the user chose in onboarding/Settings —
-    /// so that choice still means something.
+    /// (places, events, the photos themselves and the faces in them), with
+    /// the user's chosen prompt set held in reserve afterwards. A quiet
+    /// day still gets the chosen prompt set, and an active day never runs
+    /// out the moment the phone-derived questions are answered.
     private func guidedQuestions(for record: DayRecord) -> [GuidedQuestion] {
         let signalQuestions = GuidedQuestionBuilder.questions(
             signals: record.signals ?? [],
             timeZoneIdentifier: record.timeZoneIdentifier
         )
-        // More than the two open-ended fallbacks means the day produced
-        // at least one specific question worth asking.
-        guard signalQuestions.count > 2 else { return GuidedQuestion.from(settings.activeQuestionSet) }
-        return signalQuestions
+        let savedPrompts = GuidedQuestion.from(settings.activeQuestionSet)
+        var seen = Set<String>()
+        return (signalQuestions + savedPrompts).filter { question in
+            seen.insert(question.text.normalizedPromptText).inserted
+        }
+    }
+
+    private func promptButtonTitle(for record: DayRecord) -> String {
+        let context = GuidedQuestionBuilder.contextSummary(for: record.signals ?? [])
+        guard context.isActive else { return "Answer a few prompts" }
+        return "Answer prompts about \(context.shortDescription)"
     }
 
     /// Generates or regenerates this day's digest on demand: first-time
@@ -353,6 +361,12 @@ struct EntryView: View {
     }
 }
 
+private extension String {
+    var normalizedPromptText: String {
+        trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+}
+
 /// Shown on an auto-generated day so the user knows this isn't their own
 /// writing yet — disappears the moment they start typing, since the entry
 /// views flip `source` to `.converted` on the first edit (§10, §14).
@@ -368,4 +382,3 @@ private struct AutoDayBanner: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
-

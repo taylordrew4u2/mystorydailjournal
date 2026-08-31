@@ -76,13 +76,26 @@ struct GuidedEntryView: View {
         questions[min(currentIndex, questions.count - 1)]
     }
 
+    private var promptContextTitle: String {
+        let context = GuidedQuestionBuilder.contextSummary(for: record.signals ?? [])
+        if context.isActive {
+            return "This day has \(context.shortDescription)"
+        }
+        return "A quiet day, with open prompts ready"
+    }
+
     private var promptStep: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Question \(currentIndex + 1) of \(questions.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(promptContextTitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text("Prompt \(currentIndex + 1) of \(questions.count)")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
 
                     if !shownPhotos.isEmpty {
                         DayPhotoStrip(assetIdentifiers: shownPhotos)

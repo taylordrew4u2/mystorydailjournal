@@ -85,13 +85,6 @@
 	<false/>
 	<key>NSAppleMusicUsageDescription</key>
 	<string>My Story checks what you listened to that day to fill in a quiet day's digest when you don't write one yourself.</string>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>When you turn on nearby-people suggestions, My Story uses Bluetooth to find other nearby phones running My Story.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_mystory-nb._tcp</string>
-		<string>_mystory-nb._udp</string>
-	</array>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>My Story reads events you attended to fill in a day's digest and to suggest who you were with.</string>
 	<key>NSCalendarsUsageDescription</key>
@@ -102,8 +95,6 @@
 	<string>My Story reads your steps, distance, and workouts to fill in a quiet day's digest when you don't write one yourself.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>My Story reads your steps, distance, and workouts to fill in a quiet day's digest when you don't write one yourself.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>When you turn on nearby-people suggestions, My Story looks for other nearby phones running My Story to suggest tagging.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>My Story notes the places you visit, even when closed, to fill in a day's digest when you don't write one yourself.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>

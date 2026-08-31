@@ -11,6 +11,17 @@ import Foundation
 /// - **Photos come with the question.** The asset identifiers ride along so
 ///   the writer sees the shot from that day while answering it.
 enum GuidedQuestionBuilder {
+    struct ContextSummary: Equatable {
+        let parts: [String]
+
+        var isActive: Bool { !parts.isEmpty }
+
+        var shortDescription: String {
+            guard !parts.isEmpty else { return "open prompts" }
+            return ListFormatter.localizedString(byJoining: parts)
+        }
+    }
+
     /// How many signal-specific questions to ask before the two open ones.
     /// Address questions are exempt — being asked where you were is the
     /// point, and there are rarely many in a day.
@@ -71,6 +82,31 @@ enum GuidedQuestionBuilder {
 
         let specific = addressQuestions + otherQuestions.prefix(max(0, specificQuestionLimit - addressQuestions.count))
         return specific + openQuestions
+    }
+
+    static func contextSummary(for signals: [DaySignal]) -> ContextSummary {
+        var parts: [String] = []
+
+        if signals.contains(where: { $0.kind == .photo }) {
+            parts.append("photos")
+        }
+        if signals.contains(where: { $0.kind == .visit }) {
+            parts.append("places")
+        }
+        if signals.contains(where: { $0.kind == .calendar }) {
+            parts.append("calendar")
+        }
+        if signals.contains(where: { $0.kind == .activity }) {
+            parts.append("movement")
+        }
+        if signals.contains(where: { $0.kind == .media }) {
+            parts.append("music")
+        }
+        if signals.contains(where: { $0.kind == .sharedItem || $0.kind == .attachment || $0.kind == .fileWatch }) {
+            parts.append("notes")
+        }
+
+        return ContextSummary(parts: parts)
     }
 
     /// The two questions every day ends on, whatever else it had.

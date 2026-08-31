@@ -42,7 +42,7 @@ struct ShortcutTemplate {
             "Tap New Blank Automation, then tap Add Action.",
             "Search for Find Notes and tap it. Then tap Add Filter inside it and set: Created Date → is → Today.",
             "Tap Add Action again, search for My Story, and tap Add to My Story.",
-            "Inside Add to My Story, tap the light-blue text field and pick Notes — that connects the notes it found to your journal.",
+            "Inside Add to My Story, tap the light-blue text field and pick Notes — that adds the notes it found to your journal.",
             "Tap Done. That's everything — from now on it runs every day without you touching it.",
         ],
         installURL: nil
