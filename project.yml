@@ -4,6 +4,7 @@ options:
   deploymentTarget:
     iOS: "18.0"
   createIntermediateGroups: true
+  autoCreateSchemes: false
 
 settings:
   base:
@@ -55,10 +56,6 @@ targets:
         embed: true
       - target: MyStoryScreenTimeExtension
         embed: true
-    scheme:
-      testTargets:
-        - MyStoryDailyJournalTests
-      gatherCoverageData: true
 
   MyStoryWidgetsExtension:
     type: app-extension
@@ -137,3 +134,22 @@ targets:
         # with "Could not find test host". Point both at the real product.
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/My Story.app/My Story"
         BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  MyStoryDailyJournal:
+    build:
+      targets:
+        MyStoryDailyJournal: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - MyStoryDailyJournalTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+

@@ -380,6 +380,15 @@ avoids Xcode-project merge conflicts.
 
 ```sh
 brew install xcodegen
+sh scripts/build_local.sh
+open MyStoryDailyJournal.xcodeproj
+```
+
+The script creates `MyStoryDailyJournal.xcodeproj` if it is missing, uses the existing project otherwise, picks an available iPhone simulator for `build-for-testing`, and falls back to a generic iOS compile if simulator lookup is unavailable.
+
+Manual equivalent:
+
+```sh
 xcodegen generate
 open MyStoryDailyJournal.xcodeproj
 ```
