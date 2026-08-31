@@ -34,6 +34,16 @@ enum PersistenceController {
         }
 
         let storeURL = AppGroup.storeURL
+
+        // Without the iCloud entitlement, SwiftData's CloudKit backing raises
+        // an uncaught Objective-C exception rather than throwing a Swift error
+        // the `catch` below could see, so the app dies here instead of falling
+        // back. Don't ask for CloudKit when the entitlements aren't there.
+        guard AppGroup.hasProvisionedEntitlements else {
+            print("No app group entitlement; using a local-only store without CloudKit.")
+            return createPersistentLocalContainer(storeURL: storeURL)
+        }
+
         let cloudConfiguration = ModelConfiguration(
             schema: schema,
             url: storeURL,

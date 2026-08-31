@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A superseded run tells you nothing useful, and macOS minutes are the
+# expensive kind.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pick whatever the newest installed Xcode is rather than pinning a
+      # version the runner image may drop. iOS 18 SDK (Xcode 16+) is the
+      # floor; FoundationModels is compiled out entirely on anything older
+      # than Xcode 26 by its own `#if canImport` guard, so both build.
+      - name: Select the newest Xcode
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Using $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      # The .xcodeproj is generated, not committed (see README) — so CI
+      # builds it exactly the way a contributor does.
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the project
+        run: xcodegen generate
+
+      # Device names come and go with the runner image; ask the machine
+      # what it actually has rather than hard-coding "iPhone 16".
+      - name: Choose a simulator
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available
+          udid=$(xcrun simctl list devices available | grep -E "^ +iPhone" | head -1 | grep -oE "[0-9A-Fa-f-]{36}" || true)
+          if [ -z "$udid" ]; then
+            echo "::error::No iPhone simulator available on this runner."
+            exit 1
+          fi
+          echo "Using simulator $udid"
+          echo "SIMULATOR_ID=$udid" >> "$GITHUB_ENV"
+
+      # Split from the test run so that an install failure can be told
+      # apart from a compile failure, and so the bundle can be inspected
+      # in between.
+      - name: Build for testing
+        env:
+          NSUnbufferedIO: YES
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project MyStoryDailyJournal.xcodeproj \
+            -scheme MyStoryDailyJournal \
+            -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS=""
+
+      # The simulator refuses an app whose embedded extensions declare the
+      # wrong kind of extension dictionary, and its error names only one of
+      # them — so show what was actually built.
+      - name: Inspect the built app bundle
+        if: ${{ !cancelled() }}
+        run: |
+          app=$(find DerivedData/Build/Products -maxdepth 2 -name "*.app" -type d | head -1)
+          if [ -z "$app" ]; then
+            echo "No .app was produced."
+            exit 0
+          fi
+          echo "App bundle: $app"
+          bad=0
+          for dir in "$app/PlugIns" "$app/Extensions"; do
+            [ -d "$dir" ] || { echo "(no $(basename "$dir")/ directory)"; continue; }
+            echo "=== $(basename "$dir")/ ==="
+            for ext in "$dir"/*.appex; do
+              [ -d "$ext" ] || continue
+              echo "--- $(basename "$ext")"
+              plutil -extract CFBundleIdentifier raw "$ext/Info.plist" 2>/dev/null || echo "  (no CFBundleIdentifier)"
+              # PlugIns/ wants NSExtension; Extensions/ wants
+              # EXAppExtensionAttributes. An appex carrying neither is the one
+              # the simulator rejects with "extensionDictionary must be set".
+              if [ "$(basename "$dir")" = "PlugIns" ]; then
+                key=NSExtension.NSExtensionPointIdentifier
+              else
+                key=EXAppExtensionAttributes.EXExtensionPointIdentifier
+              fi
+              if point=$(plutil -extract "$key" raw "$ext/Info.plist" 2>/dev/null); then
+                echo "  $key = $point"
+              else
+                echo "::error::$(basename "$ext") in $(basename "$dir")/ has no $key — the simulator will refuse to install the app."
+                bad=1
+              fi
+            done
+          done
+          exit $bad
+
+      - name: Test
+        env:
+          NSUnbufferedIO: YES
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project MyStoryDailyJournal.xcodeproj \
+            -scheme MyStoryDailyJournal \
+            -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult
+
+      # The result bundle is what makes a red run diagnosable after the
+      # fact — which failed, and why.
+      - name: Keep the test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          retention-days: 14
+          if-no-files-found: ignore
