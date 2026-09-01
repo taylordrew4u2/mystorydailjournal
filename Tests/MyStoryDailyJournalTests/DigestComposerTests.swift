@@ -14,7 +14,7 @@ final class DigestComposerTests: XCTestCase {
     func testComposeWithNoSignalsStillProducesAHeadline() {
         let text = DigestComposer.compose(date: makeDate(), signals: [])
         XCTAssertTrue(text.contains("Wednesday"))
-        XCTAssertTrue(text.contains("No signals were available"))
+        XCTAssertTrue(text.contains("I don't have much to go on for this day yet."))
     }
 
     func testComposeIsDeterministicForTheSameInputs() {
@@ -43,7 +43,7 @@ final class DigestComposerTests: XCTestCase {
 
         let text = DigestComposer.compose(date: makeDate(), signals: [activity])
 
-        XCTAssertTrue(text.contains("Had an unusually long day on foot."))
+        XCTAssertTrue(text.contains("I had an unusually long day on foot."))
         XCTAssertFalse(text.contains("44,000"))
         XCTAssertFalse(text.contains("steps"))
     }
@@ -53,7 +53,7 @@ final class DigestComposerTests: XCTestCase {
         signal.setPayload(FileWatchPayload(fileName: "notes.txt", folderName: "Journal"))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [signal])
-        XCTAssertTrue(text.contains("One new file in Journal"))
+        XCTAssertTrue(text.contains("One new file showed up in Journal"))
     }
 
     func testComposeIncludesMediaClause() {
@@ -61,7 +61,7 @@ final class DigestComposerTests: XCTestCase {
         signal.setPayload(MediaPayload(titles: ["A Song"]))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [signal])
-        XCTAssertTrue(text.contains("Listened to \"A Song\""))
+        XCTAssertTrue(text.contains("I listened to \"A Song\""))
     }
 
     func testComposeOmitsClausesForMissingSignalKinds() {
@@ -107,7 +107,7 @@ final class DigestComposerTests: XCTestCase {
         ))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [signal])
-        XCTAssertTrue(text.contains("Took one photo around Golden Gate Park in the afternoon"))
+        XCTAssertTrue(text.contains("I took one photo around Golden Gate Park in the afternoon"))
     }
 
     func testPhotosClauseDescribesTheFacesItCounted() {
@@ -185,9 +185,9 @@ final class DigestComposerTests: XCTestCase {
         file.setPayload(AttachmentPayload(kind: .file, fileName: "recipe.pdf"))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [note, photo, file])
-        XCTAssertTrue(text.contains("From my own notes: \"Ran into Maria at the market\""))
-        XCTAssertTrue(text.contains("Pinned a photo to this day"))
-        XCTAssertTrue(text.contains("Attached recipe.pdf"))
+        XCTAssertTrue(text.contains("I noted: \"Ran into Maria at the market\""))
+        XCTAssertTrue(text.contains("I pinned a photo to this day"))
+        XCTAssertTrue(text.contains("I attached recipe.pdf"))
     }
 
     func testComposeIncludesSharedItems() {
@@ -195,7 +195,7 @@ final class DigestComposerTests: XCTestCase {
         signal.setPayload(SharedItemPayload(title: "Trail idea", text: "Mount Tam loop next weekend", sourceApp: "Notes"))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [signal])
-        XCTAssertTrue(text.contains("Saved \"Trail idea\": Mount Tam loop next weekend"))
+        XCTAssertTrue(text.contains("I saved \"Trail idea\": Mount Tam loop next weekend"))
     }
 
     func testComposeUsesTheDaysOwnTimeZoneForTimeOfDay() {
@@ -238,7 +238,7 @@ final class DigestComposerTests: XCTestCase {
         photo.setPayload(PhotoPayload(assetLocalIdentifier: "abc", isScreenshot: false, placeName: "Golden Gate Park"))
 
         let questions = DigestComposer.refinementQuestions(signals: [event, photo])
-        XCTAssertTrue(questions.contains("How did \"Standup\" at Room B go, and who was there?"))
+        XCTAssertTrue(questions.contains("How did \"Standup\" at Room B shape the day?"))
         XCTAssertTrue(questions.contains("You took photos around Golden Gate Park — what was happening there?"))
     }
 

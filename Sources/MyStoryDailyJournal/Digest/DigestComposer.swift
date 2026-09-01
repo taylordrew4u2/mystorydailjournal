@@ -60,7 +60,7 @@ enum DigestComposer {
         }
 
         guard clauses.count > 1 else {
-            return "\(clauses[0]) No signals were available for this day."
+            return "\(clauses[0]) I don't have much to go on for this day yet."
         }
 
         return clauses.joined(separator: " ")
@@ -111,14 +111,14 @@ enum DigestComposer {
         case 1:
             let place = places[0]
             if let label = describableCategory(of: place.name, categoryLabel: place.categoryLabel) {
-                return "Spent time at \(place.name), the \(label)."
+                return "I spent time at \(place.name), the \(label)."
             }
-            return "Spent time at \(place.name)."
+            return "I spent time at \(place.name)."
         case 2:
-            return "Started at \(names[0]), then a stop at \(names[1])."
+            return "I started at \(names[0]), then stopped at \(names[1])."
         default:
             let middle = names.dropFirst().dropLast().joined(separator: ", ")
-            return "Started at \(names.first!), spent time in \(middle), then a stop at \(names.last!)."
+            return "I started at \(names.first!), spent time in \(middle), then stopped at \(names.last!)."
         }
     }
 
@@ -153,7 +153,7 @@ enum DigestComposer {
         }
 
         guard !described.isEmpty else { return nil }
-        return "On the calendar: " + described.joined(separator: "; ") + "."
+        return "I had " + described.joined(separator: "; ") + " on the calendar."
     }
 
     /// Everything the day's photos can say for themselves: how many were
@@ -175,13 +175,13 @@ enum DigestComposer {
 
         var parts: [String] = []
         if regularCount > 0 {
-            parts.append(regularCount == 1 ? "Took one photo" : "Took \(regularCount) photos")
+            parts.append(regularCount == 1 ? "took one photo" : "took \(regularCount) photos")
         }
         if screenshotCount > 0 {
-            parts.append(screenshotCount == 1 ? "one screenshot" : "\(screenshotCount) screenshots")
+            parts.append(screenshotCount == 1 ? "saved one screenshot" : "saved \(screenshotCount) screenshots")
         }
         guard !parts.isEmpty else { return nil }
-        var sentence = parts.joined(separator: " and ")
+        var sentence = "I " + parts.joined(separator: " and ")
 
         // The asset's own metadata: where the shots were geotagged, and
         // which part of the day the camera was actually out.
@@ -306,7 +306,7 @@ enum DigestComposer {
 
         guard !parts.isEmpty else { return nil }
         let sentence = parts.joined(separator: ", ")
-        return sentence.prefix(1).uppercased() + sentence.dropFirst() + "."
+        return "I " + sentence + "."
     }
 
     private static func movementPhrase(forStepCount stepCount: Int, distanceMeters: Double) -> String? {
@@ -333,15 +333,15 @@ enum DigestComposer {
             return nil
         }
         return media.titles.count == 1
-            ? "Listened to \"\(media.titles[0])\"."
-            : "Listened to \(media.titles.count) songs, including \"\(media.titles[0])\"."
+            ? "I listened to \"\(media.titles[0])\"."
+            : "I listened to \(media.titles.count) songs, including \"\(media.titles[0])\"."
     }
 
     private static func weatherClause(_ signals: [DaySignal]) -> String? {
         guard let weather = signals.first(where: { $0.kind == .weather })?.payload(as: WeatherPayload.self) else {
             return nil
         }
-        var sentence = weather.conditionDescription
+        var sentence = "The weather was \(weather.conditionDescription)"
         if let high = weather.highTemperatureCelsius {
             sentence += ", high around \(Int(high.rounded()))°"
         }
@@ -366,9 +366,9 @@ enum DigestComposer {
                 ? String(item.text.prefix(120)) + "…"
                 : item.text
             if let title = item.title, !title.isEmpty {
-                return "Saved \"\(title)\": \(snippet)"
+                return "I saved \"\(title)\": \(snippet)"
             }
-            return "Saved a note: \"\(snippet)\""
+            return "I saved a note: \"\(snippet)\""
         }
         return described.joined(separator: " ") + (described.last?.hasSuffix(".") == true ? "" : ".")
     }
@@ -390,10 +390,10 @@ enum DigestComposer {
                 : post.text
             if snippet.isEmpty {
                 parts.append(post.mediaCount == 1
-                    ? "Put a photo on \(post.network)"
-                    : "Put \(post.mediaCount) photos on \(post.network)")
+                    ? "I put a photo on \(post.network)"
+                    : "I put \(post.mediaCount) photos on \(post.network)")
             } else {
-                parts.append("Posted on \(post.network): \"\(snippet)\"")
+                parts.append("I posted on \(post.network): \"\(snippet)\"")
             }
         }
         if posts.count > parts.count {
@@ -415,17 +415,17 @@ enum DigestComposer {
 
         var parts: [String] = []
         for note in attachments.filter({ $0.kind == .note }).compactMap(\.text) {
-            parts.append("From my own notes: \"\(note)\"")
+            parts.append("I noted: \"\(note)\"")
         }
         let photoCount = attachments.filter { $0.kind == .photo }.count
         if photoCount > 0 {
             parts.append(photoCount == 1
-                ? "Pinned a photo to this day"
-                : "Pinned \(photoCount) photos to this day")
+                ? "I pinned a photo to this day"
+                : "I pinned \(photoCount) photos to this day")
         }
         let fileNames = attachments.filter { $0.kind == .file }.compactMap(\.fileName)
         if !fileNames.isEmpty {
-            parts.append("Attached \(fileNames.joined(separator: ", "))")
+            parts.append("I attached \(fileNames.joined(separator: ", "))")
         }
 
         guard !parts.isEmpty else { return nil }
@@ -464,7 +464,7 @@ enum DigestComposer {
         guard !files.isEmpty else { return nil }
 
         return files.count == 1
-            ? "One new file in \(files[0].folderName)."
-            : "\(files.count) new files in \(files[0].folderName)."
+            ? "One new file showed up in \(files[0].folderName)."
+            : "\(files.count) new files showed up in \(files[0].folderName)."
     }
 }

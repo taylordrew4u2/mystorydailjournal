@@ -95,6 +95,10 @@ enum DigestRewriter {
         offhand, or seemingly unrelated remarks — nothing the writer said \
         may be dropped, and each detail belongs where it naturally fits in \
         the story, never tacked on at the end.
+        - Make it sound written by a real person, not polished into a \
+        perfect recap. Use first person, contractions when natural, and \
+        small connective phrases; avoid generic lines like "today was a \
+        good day" unless the writer actually said that.
         - Keep every fact exactly as given: people, places, event names, \
         numbers, feelings. Do not invent anything that isn't stated.
         - Where the writer said how something felt, let that feeling shape \
@@ -172,9 +176,13 @@ enum DigestRewriter {
 
         Rewrite this daily journal summary in a warmer, more natural voice. \
         Keep every fact exactly as given — don't add or remove anything, \
-        just make it read less like a list. Raw metrics are clues, not prose: \
+        just make it read less like a list. It should sound like the writer \
+        jotting down what they remember, not an assistant recapping sensor \
+        output. Use first person, contractions where they fit, and plain \
+        human phrasing. Raw metrics are clues, not prose: \
         avoid exact step counts or tracker-like measurements unless the \
-        writer explicitly wrote them. No emoji, plain text only.
+        writer explicitly wrote them. Do not explain every source just \
+        because it exists. No emoji, plain text only.
         """
         if let toneInstruction = await SettingsStore.shared.writingTone.promptInstruction {
             prompt += " \(toneInstruction)"
