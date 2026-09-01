@@ -136,10 +136,8 @@ enum DigestComposer {
     }
 
     /// Names every event with as much of its own metadata as exists: title,
-    /// part of the day, and the event's location field. Attendee names ride
-    /// in the payload but are deliberately never written here — §4: they
-    /// don't enter a digest without the user confirming them (the guided
-    /// refinement flow asks instead).
+    /// part of the day, and the event's location field. Guest lists are not
+    /// used; people enter the diary only when the writer names or tags them.
     private static func calendarClause(_ signals: [DaySignal], calendar: Calendar) -> String? {
         let events = signals
             .filter { $0.kind == .calendar }

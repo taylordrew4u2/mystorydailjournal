@@ -2,9 +2,8 @@ import Foundation
 import EventKit
 
 /// Calendar events actually attended — declined/cancelled events are
-/// filtered out (§4). Attendee names ride along in the payload for M5's
-/// suggestion chips; they're never written into a digest or `Person` record
-/// without the user confirming them.
+/// filtered out (§4). The journal stores the event itself, not the guest
+/// list; people enter a day only when the writer writes or tags them.
 struct CalendarSignalProvider: DaySignalProvider {
     let kind: DaySignalKind = .calendar
 
@@ -36,7 +35,6 @@ struct CalendarSignalProvider: DaySignalProvider {
             let payload = CalendarPayload(
                 eventIdentifier: event.eventIdentifier ?? UUID().uuidString,
                 title: event.title ?? "Untitled event",
-                attendeeNames: (event.attendees ?? []).compactMap(\.name),
                 location: (trimmedLocation?.isEmpty ?? true) ? nil : trimmedLocation
             )
             let signal = DaySignal(kind: .calendar, timestamp: event.startDate)

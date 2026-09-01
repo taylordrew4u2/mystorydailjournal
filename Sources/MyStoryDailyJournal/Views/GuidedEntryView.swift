@@ -214,9 +214,8 @@ struct GuidedEntryView: View {
         question.photoAssetIdentifiers.isEmpty ? dayPhotos : question.photoAssetIdentifiers
     }
 
-    /// Names the day already knows — calendar attendees, people tagged on
-    /// it. Tapping one writes it into the answer and tags them on the day
-    /// when the questions are finished.
+    /// Names the writer already gave directly. Tapping one writes it into
+    /// the answer and tags them on the day when the questions are finished.
     private var nameSuggestionRow: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Who?")

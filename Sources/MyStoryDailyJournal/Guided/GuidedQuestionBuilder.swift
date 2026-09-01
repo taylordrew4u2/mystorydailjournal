@@ -47,11 +47,6 @@ enum GuidedQuestionBuilder {
             }
             .sorted { $0.signal.timestamp < $1.signal.timestamp }
 
-        let attendeeNames = signals
-            .filter { $0.kind == .calendar }
-            .compactMap { $0.payload(as: CalendarPayload.self) }
-            .flatMap(\.attendeeNames)
-
         var addressQuestions: [GuidedQuestion] = []
         var otherQuestions: [GuidedQuestion] = []
 
@@ -69,7 +64,7 @@ enum GuidedQuestionBuilder {
         if let photoQuestion = photoQuestion(photos: photos) {
             otherQuestions.append(photoQuestion)
         }
-        if let peopleQuestion = peopleInPhotoQuestion(photos: photos, calendar: calendar, attendeeNames: attendeeNames) {
+        if let peopleQuestion = peopleInPhotoQuestion(photos: photos, calendar: calendar) {
             otherQuestions.append(peopleQuestion)
         }
         if let activityQuestion = activityQuestion(signals: signals) {
@@ -383,8 +378,7 @@ enum GuidedQuestionBuilder {
     /// the day's known names offered as one-tap answers.
     private static func peopleInPhotoQuestion(
         photos: [(signal: DaySignal, payload: PhotoPayload)],
-        calendar: Calendar,
-        attendeeNames: [String]
+        calendar: Calendar
     ) -> GuidedQuestion? {
         let candidates = photos.filter {
             !$0.payload.isScreenshot && $0.payload.faceCount > 0 && $0.payload.personNames.isEmpty
@@ -402,7 +396,6 @@ enum GuidedQuestionBuilder {
             text: text,
             subject: .peopleInPhoto(faceCount: faces),
             photoAssetIdentifiers: [busiest.payload.assetLocalIdentifier],
-            nameSuggestions: Array(Set(attendeeNames)).sorted(),
             feelingPrompt: "How was it, being with them?"
         )
     }

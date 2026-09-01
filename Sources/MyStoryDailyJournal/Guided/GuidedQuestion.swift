@@ -1,8 +1,8 @@
 import Foundation
 
 /// One prompt in the guided flow, plus everything the day already knows
-/// about what it's asking: the photos to show alongside it, names worth
-/// offering as one-tap answers, and — for a place question — the address
+/// about what it's asking: the photos to show alongside it, any names the
+/// writer already gave directly, and — for a place question — the address
 /// that the answer will rename.
 ///
 /// Richer than the plain strings a `QuestionSet` carries, because the
@@ -29,9 +29,9 @@ struct GuidedQuestion: Identifiable, Equatable, Sendable {
     /// `PHAsset` local identifiers to show with the question, so the
     /// writer is looking at the actual photo while answering.
     var photoAssetIdentifiers: [String] = []
-    /// Names already known for this day (calendar attendees, people
-    /// tagged on the record) offered as chips. Tapping one writes the name
-    /// into the answer *and* tags them on the day.
+    /// Names already known because the writer wrote or tagged them, offered
+    /// as chips. Tapping one writes the name into the answer *and* tags
+    /// them on the day.
     var nameSuggestions: [String] = []
 
     /// The follow-up asked under every question so the entry carries the

@@ -91,13 +91,13 @@ final class GuidedQuestionBuilderTests: XCTestCase {
         XCTAssertFalse(questions.contains { $0.text.contains("who were you with?") })
     }
 
-    func testEventQuestionsOfferTheirAttendeesAsAnswers() {
+    func testEventQuestionsDoNotOfferAttendeesAsAnswers() {
         let event = DaySignal(kind: .calendar, timestamp: makeDate(hour: 10))
         event.setPayload(CalendarPayload(eventIdentifier: "1", title: "Standup", attendeeNames: ["Dana", "Sam"]))
 
         let questions = GuidedQuestionBuilder.questions(signals: [event], aliases: [:])
         let eventQuestion = questions.first { $0.text.contains("Standup") }
-        XCTAssertEqual(eventQuestion?.nameSuggestions, ["Dana", "Sam"])
+        XCTAssertEqual(eventQuestion?.nameSuggestions, [])
     }
 
     func testEveryQuestionAsksHowItFeltUnlessItAlreadyDoes() {

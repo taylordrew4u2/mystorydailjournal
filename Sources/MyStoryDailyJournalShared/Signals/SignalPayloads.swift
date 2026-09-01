@@ -60,7 +60,10 @@ struct PhotoPayload: Codable {
 struct CalendarPayload: Codable {
     var eventIdentifier: String
     var title: String
-    var attendeeNames: [String]
+
+    /// Legacy-compatible field. New collection stores an empty list because
+    /// the diary should not infer people from calendar guest lists.
+    var attendeeNames: [String] = []
 
     /// The event's own location field, when the organizer filled one in —
     /// a derived summary (§10). Optional so payloads stored before this

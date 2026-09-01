@@ -24,9 +24,8 @@ enum ProfileBrief {
 
         var isEmpty: Bool { people.isEmpty && places.isEmpty && themes.isEmpty }
 
-        /// Everything the day says about itself: who's tagged on it, who
-        /// its events list, where it went, and what its tags and photos
-        /// were of.
+        /// Everything the day says about itself: who's tagged on it, where
+        /// it went, and what its tags and photos were of.
         static func from(_ record: DayRecord) -> Cues {
             let signals: [DaySignal] = record.signals ?? []
 
@@ -43,9 +42,6 @@ enum ProfileBrief {
 
             for signal in signals {
                 switch signal.kind {
-                case .calendar:
-                    guard let payload = signal.payload(as: CalendarPayload.self) else { continue }
-                    people.append(contentsOf: payload.attendeeNames)
                 case .visit:
                     guard let payload = signal.payload(as: VisitPayload.self), !payload.isPassingThrough else { continue }
                     places.append(payload.placeName)

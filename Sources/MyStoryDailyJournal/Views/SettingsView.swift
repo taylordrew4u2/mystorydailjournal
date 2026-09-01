@@ -32,7 +32,7 @@ struct SettingsView: View {
                         Text(tone.displayName).tag(tone)
                     }
                 }
-                Text("The voice used when entries are written or rewritten for you. The app's job is to remember the day for you, ask when it needs help, and write in a voice that sounds like yours. Learning stays on this phone.")
+                Text("The voice used when entries are written or rewritten for you. The app's job is to remember the day for you, keep asking useful questions when it needs more, and write in a voice that sounds like yours. Learning stays on this phone.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -330,8 +330,8 @@ struct DataSourceDisclosure: Identifiable {
     static let calendar = DataSourceDisclosure(
         source: .calendar,
         title: "Calendar events",
-        reads: "Events on your calendars: title, time, location, and attendee names. Declined and cancelled events are skipped.",
-        keeps: "Event titles, times, and locations, stored with that day's entry. Attendee names are kept only as tagging suggestions — they never appear in a story unless you add them yourself.",
+        reads: "Events on your calendars: title, time, and location. Declined and cancelled events are skipped.",
+        keeps: "Event titles, times, and locations, stored with that day's entry. Guest lists are not saved or used as people suggestions.",
         leavesPhone: "Nothing.",
         why: "So an auto-written day can say what actually happened, when, and where."
     )
@@ -509,7 +509,7 @@ private struct SocialProfileLinksView: View {
                 .foregroundStyle(internet.isOnline ? .primary : .secondary)
 
                 Text(internet.isOnline
-                     ? "Add your own public profile links so the journal can later import more of your public writing, with your say-so, and learn how you sound."
+                     ? "Add your own public profile links so the journal can later offer user-started imports of your public writing and learn how you sound from words you choose."
                      : "Profile links need an internet connection because they point to public pages.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -536,7 +536,7 @@ private struct SocialProfileLinksView: View {
             } header: {
                 Text("Your Links")
             } footer: {
-                Text("These links do not import anything by themselves. They are saved as places you can choose to read from later.")
+                Text("These links do not import anything by themselves. They are saved only as places you can choose to import your own writing from later.")
             }
 
             if internet.isOnline {

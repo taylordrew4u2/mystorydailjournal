@@ -2,9 +2,8 @@ import SwiftUI
 import SwiftData
 
 /// People metadata for one day (§3, §16): tagged people, a one-tap recent
-/// list, a free-text "add someone new," and calendar-attendee suggestions
-/// that only ever become fact once the user taps to accept them — never
-/// written automatically.
+/// list, and a free-text "add someone new." Calendar guest lists are not
+/// mined for people; the writer has to name or tag someone directly.
 struct PersonChipsSection: View {
     let record: DayRecord
 
@@ -19,15 +18,6 @@ struct PersonChipsSection: View {
     private var recentPeople: [Person] {
         PeopleRepository.recentPeople(in: context)
             .filter { candidate in !taggedPeople.contains { $0.id == candidate.id } }
-    }
-
-    private var attendeeSuggestions: [String] {
-        let taggedNames = Set(taggedPeople.map { $0.name.lowercased() })
-        let names = (record.signals ?? [])
-            .filter { $0.kind == .calendar }
-            .compactMap { $0.payload(as: CalendarPayload.self) }
-            .flatMap(\.attendeeNames)
-        return Array(Set(names)).filter { !taggedNames.contains($0.lowercased()) }.sorted()
     }
 
     var body: some View {
@@ -48,15 +38,6 @@ struct PersonChipsSection: View {
                 } + [addChip])
             } else {
                 row(title: "Add someone", chips: [addChip])
-            }
-
-            if !attendeeSuggestions.isEmpty {
-                row(title: "From your calendar", chips: attendeeSuggestions.map { name in
-                    Chip(label: name, isFilled: false, isSuggestion: true) {
-                        let person = PeopleRepository.findOrCreatePerson(named: name, in: context)
-                        PeopleRepository.toggle(person, on: record, in: context)
-                    }
-                })
             }
 
             if isAddingPerson {
@@ -102,7 +83,6 @@ private struct Chip: View, Identifiable {
     nonisolated var id: String { label }
     let label: String
     let isFilled: Bool
-    var isSuggestion: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -111,13 +91,8 @@ private struct Chip: View, Identifiable {
                 .font(.footnote.weight(.medium))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isFilled ? Color.accentColor : Color.secondary.opacity(isSuggestion ? 0.08 : 0.12))
+                .background(isFilled ? Color.accentColor : Color.secondary.opacity(0.12))
                 .foregroundStyle(isFilled ? Color(uiColor: .systemBackground) : Color.primary)
-                .overlay {
-                    if isSuggestion {
-                        Capsule().strokeBorder(Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [3]))
-                    }
-                }
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
