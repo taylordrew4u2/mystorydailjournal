@@ -137,6 +137,17 @@ final class GuidedQuestionBuilderTests: XCTestCase {
         XCTAssertTrue(next.id.hasPrefix("open.continue."))
     }
 
+    func testContinuationQuestionsDoNotImmediatelyRepeat() {
+        let questions = (0..<24).map { count in
+            let responses = (0..<count).map { index in
+                GuidedResponse(question: "Q\(index)", answer: "A\(index)")
+            }
+            return GuidedQuestionBuilder.continuationQuestion(after: responses, signals: []).text
+        }
+
+        XCTAssertEqual(Set(questions).count, questions.count)
+    }
+
     func testContinuationQuestionsUseMovementWithoutRawStepCounts() {
         let activity = DaySignal(kind: .activity, timestamp: makeDate())
         activity.setPayload(ActivityPayload(stepCount: 44_000, distanceMeters: 32_000, workoutSummaries: []))

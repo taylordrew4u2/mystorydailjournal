@@ -112,10 +112,12 @@ enum GuidedQuestionBuilder {
     static func continuationQuestion(after responses: [GuidedResponse], signals: [DaySignal]) -> GuidedQuestion {
         let promptCount = responses.count
         let templates = continuationTemplates(hasMovement: signals.contains { $0.kind == .activity })
-        let template = templates[promptCount % templates.count]
+        let templateIndex = promptCount % templates.count
+        let cycle = promptCount / templates.count
+        let template = templates[templateIndex]
         return GuidedQuestion(
             id: "open.continue.\(promptCount)",
-            text: template.text,
+            text: continuationText(template.text, cycle: cycle),
             subject: .open,
             feelingPrompt: template.feelingPrompt
         )
@@ -153,6 +155,19 @@ enum GuidedQuestionBuilder {
             )
         }
         return templates
+    }
+
+    private static func continuationText(_ text: String, cycle: Int) -> String {
+        guard cycle > 0 else { return text }
+        let lenses = [
+            "Think about the morning.",
+            "Think about the middle of the day.",
+            "Think about the evening.",
+            "Think about what changed your mood.",
+            "Think about what future-you would forget first.",
+            "Think about what felt private or hard to explain.",
+        ]
+        return "\(text) \(lenses[(cycle - 1) % lenses.count])"
     }
 
     /// Visits first, then any place a photo was geotagged to that no visit
