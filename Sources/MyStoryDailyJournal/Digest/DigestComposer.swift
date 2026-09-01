@@ -111,14 +111,14 @@ enum DigestComposer {
         case 1:
             let place = places[0]
             if let label = describableCategory(of: place.name, categoryLabel: place.categoryLabel) {
-                return "I spent time at \(place.name), the \(label)."
+                return "The day had time at \(place.name), the \(label)."
             }
-            return "I spent time at \(place.name)."
+            return "The day had time at \(place.name)."
         case 2:
-            return "I started at \(names[0]), then stopped at \(names[1])."
+            return "It started at \(names[0]), then moved to \(names[1])."
         default:
             let middle = names.dropFirst().dropLast().joined(separator: ", ")
-            return "I started at \(names.first!), spent time in \(middle), then stopped at \(names.last!)."
+            return "It started at \(names.first!), moved through \(middle), and ended at \(names.last!)."
         }
     }
 
@@ -153,7 +153,7 @@ enum DigestComposer {
         }
 
         guard !described.isEmpty else { return nil }
-        return "I had " + described.joined(separator: "; ") + " on the calendar."
+        return "There was " + described.joined(separator: "; ") + " on the calendar."
     }
 
     /// Everything the day's photos can say for themselves: how many were
@@ -306,7 +306,7 @@ enum DigestComposer {
 
         guard !parts.isEmpty else { return nil }
         let sentence = parts.joined(separator: ", ")
-        return "I " + sentence + "."
+        return "By the end, I " + sentence + "."
     }
 
     private static func movementPhrase(forStepCount stepCount: Int, distanceMeters: Double) -> String? {
@@ -333,8 +333,8 @@ enum DigestComposer {
             return nil
         }
         return media.titles.count == 1
-            ? "I listened to \"\(media.titles[0])\"."
-            : "I listened to \(media.titles.count) songs, including \"\(media.titles[0])\"."
+            ? "\"\(media.titles[0])\" was in the mix."
+            : "Music was in the mix, including \"\(media.titles[0])\"."
     }
 
     private static func weatherClause(_ signals: [DaySignal]) -> String? {
@@ -368,7 +368,7 @@ enum DigestComposer {
             if let title = item.title, !title.isEmpty {
                 return "I saved \"\(title)\": \(snippet)"
             }
-            return "I saved a note: \"\(snippet)\""
+            return "A saved note said: \"\(snippet)\""
         }
         return described.joined(separator: " ") + (described.last?.hasSuffix(".") == true ? "" : ".")
     }
@@ -390,10 +390,10 @@ enum DigestComposer {
                 : post.text
             if snippet.isEmpty {
                 parts.append(post.mediaCount == 1
-                    ? "I put a photo on \(post.network)"
-                    : "I put \(post.mediaCount) photos on \(post.network)")
+                    ? "A photo went on \(post.network)"
+                    : "\(post.mediaCount) photos went on \(post.network)")
             } else {
-                parts.append("I posted on \(post.network): \"\(snippet)\"")
+                parts.append("On \(post.network), I posted: \"\(snippet)\"")
             }
         }
         if posts.count > parts.count {
@@ -415,13 +415,13 @@ enum DigestComposer {
 
         var parts: [String] = []
         for note in attachments.filter({ $0.kind == .note }).compactMap(\.text) {
-            parts.append("I noted: \"\(note)\"")
+            parts.append("In my notes: \"\(note)\"")
         }
         let photoCount = attachments.filter { $0.kind == .photo }.count
         if photoCount > 0 {
             parts.append(photoCount == 1
-                ? "I pinned a photo to this day"
-                : "I pinned \(photoCount) photos to this day")
+                ? "A photo was pinned to this day"
+                : "\(photoCount) photos were pinned to this day")
         }
         let fileNames = attachments.filter { $0.kind == .file }.compactMap(\.fileName)
         if !fileNames.isEmpty {

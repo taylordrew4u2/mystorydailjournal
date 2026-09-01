@@ -85,7 +85,7 @@ final class PlaceNamingTests: XCTestCase {
         let aliases = [PlaceAliasStore.nameKey("480 Larkin Street"): "Blue Bottle"]
         let text = DigestComposer.compose(date: Date(), signals: [visit], placeAliases: aliases)
 
-        XCTAssertTrue(text.contains("Spent time at Blue Bottle."))
+        XCTAssertTrue(text.contains("The day had time at Blue Bottle."))
         XCTAssertFalse(text.contains("480 Larkin Street"))
     }
 }

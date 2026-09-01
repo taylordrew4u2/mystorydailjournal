@@ -51,8 +51,8 @@ enum PlaceKind: String, CaseIterable, Identifiable, Codable, Sendable {
     }
 
     /// How the entry names the place. Lower-case and article-carrying, so
-    /// it drops into the composer's existing sentences ("Spent time at the
-    /// comedy club.") without reading like a label.
+    /// it drops into the composer's existing sentences ("The day had time
+    /// at the comedy club.") without reading like a label.
     var entryPhrase: String {
         switch self {
         case .home: "home"

@@ -97,8 +97,10 @@ enum DigestRewriter {
         the story, never tacked on at the end.
         - Make it sound written by a real person, not polished into a \
         perfect recap. Use first person, contractions when natural, and \
-        small connective phrases; avoid generic lines like "today was a \
-        good day" unless the writer actually said that.
+        small connective phrases. Vary sentence openings so the entry does \
+        not become "I... I... I..." or a stack of identical clauses; avoid \
+        generic lines like "today was a good day" unless the writer \
+        actually said that.
         - Keep every fact exactly as given: people, places, event names, \
         numbers, feelings. Do not invent anything that isn't stated.
         - Where the writer said how something felt, let that feeling shape \
@@ -179,7 +181,9 @@ enum DigestRewriter {
         just make it read less like a list. It should sound like the writer \
         jotting down what they remember, not an assistant recapping sensor \
         output. Use first person, contractions where they fit, and plain \
-        human phrasing. Raw metrics are clues, not prose: \
+        human phrasing. Vary sentence openings and sentence lengths so it \
+        does not read like the same template repeated. Raw metrics are \
+        clues, not prose: \
         avoid exact step counts or tracker-like measurements unless the \
         writer explicitly wrote them. Do not explain every source just \
         because it exists. No emoji, plain text only.

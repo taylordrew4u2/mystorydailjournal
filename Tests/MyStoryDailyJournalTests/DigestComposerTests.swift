@@ -27,6 +27,14 @@ final class DigestComposerTests: XCTestCase {
         XCTAssertEqual(first, second)
     }
 
+    func testComposeAvoidsRepetitiveFirstPersonSentenceStarts() {
+        let text = DigestComposer.compose(date: makeDate(), signals: makeMixedSignals())
+        let sentenceStarts = text.components(separatedBy: ". ")
+        let firstPersonStarts = sentenceStarts.filter { $0.hasPrefix("I ") }
+
+        XCTAssertLessThanOrEqual(firstPersonStarts.count, 1)
+    }
+
     func testComposeIncludesEachAvailableSignalKind() {
         let text = DigestComposer.compose(date: makeDate(), signals: makeMixedSignals())
 
@@ -43,7 +51,7 @@ final class DigestComposerTests: XCTestCase {
 
         let text = DigestComposer.compose(date: makeDate(), signals: [activity])
 
-        XCTAssertTrue(text.contains("I had an unusually long day on foot."))
+        XCTAssertTrue(text.contains("By the end, I had an unusually long day on foot."))
         XCTAssertFalse(text.contains("44,000"))
         XCTAssertFalse(text.contains("steps"))
     }
@@ -61,7 +69,7 @@ final class DigestComposerTests: XCTestCase {
         signal.setPayload(MediaPayload(titles: ["A Song"]))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [signal])
-        XCTAssertTrue(text.contains("I listened to \"A Song\""))
+        XCTAssertTrue(text.contains("\"A Song\" was in the mix"))
     }
 
     func testComposeOmitsClausesForMissingSignalKinds() {
@@ -185,8 +193,8 @@ final class DigestComposerTests: XCTestCase {
         file.setPayload(AttachmentPayload(kind: .file, fileName: "recipe.pdf"))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [note, photo, file])
-        XCTAssertTrue(text.contains("I noted: \"Ran into Maria at the market\""))
-        XCTAssertTrue(text.contains("I pinned a photo to this day"))
+        XCTAssertTrue(text.contains("In my notes: \"Ran into Maria at the market\""))
+        XCTAssertTrue(text.contains("A photo was pinned to this day"))
         XCTAssertTrue(text.contains("I attached recipe.pdf"))
     }
 

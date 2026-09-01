@@ -180,7 +180,7 @@ final class PlaceOptionsTests: XCTestCase {
 
         let text = DigestComposer.compose(date: makeDate(), signals: [walked, visited], placeAliases: [:])
         XCTAssertFalse(text.contains("2100 Geary Boulevard"))
-        XCTAssertTrue(text.contains("Spent time at home."))
+        XCTAssertTrue(text.contains("The day had time at home."))
     }
 
     func testDigestSaysWhatKindOfPlaceAVenueIs() {
@@ -194,7 +194,7 @@ final class PlaceOptionsTests: XCTestCase {
         ))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [visit], placeAliases: [:])
-        XCTAssertTrue(text.contains("Spent time at Cobb's, the comedy club."))
+        XCTAssertTrue(text.contains("The day had time at Cobb's, the comedy club."))
     }
 
     func testDigestDoesNotRepeatACategoryTheNameAlreadySays() {
@@ -208,7 +208,7 @@ final class PlaceOptionsTests: XCTestCase {
         ))
 
         let text = DigestComposer.compose(date: makeDate(), signals: [visit], placeAliases: [:])
-        XCTAssertTrue(text.contains("Spent time at the comedy club."))
+        XCTAssertTrue(text.contains("The day had time at the comedy club."))
     }
 
     func testAStopAlreadyWalkedPastIsNeverAskedAboutAgain() {
