@@ -126,6 +126,32 @@ final class GuidedQuestionBuilderTests: XCTestCase {
         ])
     }
 
+    func testContinuationQuestionsKeepGoingAfterTheInitialPrompts() {
+        let responses = (0..<8).map { index in
+            GuidedResponse(question: "Q\(index)", answer: "A\(index)")
+        }
+
+        let next = GuidedQuestionBuilder.continuationQuestion(after: responses, signals: [])
+
+        XCTAssertFalse(next.text.isEmpty)
+        XCTAssertTrue(next.id.hasPrefix("open.continue."))
+    }
+
+    func testContinuationQuestionsUseMovementWithoutRawStepCounts() {
+        let activity = DaySignal(kind: .activity, timestamp: makeDate())
+        activity.setPayload(ActivityPayload(stepCount: 44_000, distanceMeters: 32_000, workoutSummaries: []))
+        let responses = [
+            GuidedResponse(question: "First", answer: "One"),
+            GuidedResponse(question: "Second", answer: "Two"),
+        ]
+
+        let next = GuidedQuestionBuilder.continuationQuestion(after: responses, signals: [activity])
+
+        XCTAssertTrue(next.text.contains("movement"))
+        XCTAssertFalse(next.text.contains("44,000"))
+        XCTAssertFalse(next.text.contains("steps"))
+    }
+
     func testScreenshotsAreNeverTheSubjectOfAPhotoQuestion() {
         let signals = [photo(identifier: "shot", hour: 11, isScreenshot: true)]
         let questions = GuidedQuestionBuilder.questions(signals: signals, aliases: [:])

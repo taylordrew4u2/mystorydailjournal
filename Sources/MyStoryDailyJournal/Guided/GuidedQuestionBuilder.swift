@@ -109,6 +109,18 @@ enum GuidedQuestionBuilder {
         return ContextSummary(parts: parts)
     }
 
+    static func continuationQuestion(after responses: [GuidedResponse], signals: [DaySignal]) -> GuidedQuestion {
+        let promptCount = responses.count
+        let templates = continuationTemplates(hasMovement: signals.contains { $0.kind == .activity })
+        let template = templates[promptCount % templates.count]
+        return GuidedQuestion(
+            id: "open.continue.\(promptCount)",
+            text: template.text,
+            subject: .open,
+            feelingPrompt: template.feelingPrompt
+        )
+    }
+
     /// The two questions every day ends on, whatever else it had.
     private static var openQuestions: [GuidedQuestion] {
         [
@@ -119,6 +131,28 @@ enum GuidedQuestionBuilder {
                 feelingPrompt: "How do you feel about the day now, looking back?"
             ),
         ]
+    }
+
+    private static func continuationTemplates(hasMovement: Bool) -> [(text: String, feelingPrompt: String?)] {
+        var templates: [(text: String, feelingPrompt: String?)] = [
+            ("What part of the day still feels unfinished?", "How does that part feel now?"),
+            ("What do you want future-you to understand about this day?", "What feeling should stay with it?"),
+            ("What kept pulling your attention today?", "How did that attention feel?"),
+            ("Was there a small moment that says more than the big facts?", "How does that small moment sit with you?"),
+            ("What changed between the start of the day and the end?", "How did that change feel?"),
+            ("What did you not get to say about this day yet?", "How does it feel saying it now?"),
+        ]
+        if hasMovement {
+            templates.insert(
+                ("Was there a moment that explains why the day had so much movement?", "How did your body feel in that part of the day?"),
+                at: 2
+            )
+            templates.insert(
+                ("Did moving around change your mood, or was it just the shape of the day?", "How did it feel by the end?"),
+                at: 5
+            )
+        }
+        return templates
     }
 
     /// Visits first, then any place a photo was geotagged to that no visit

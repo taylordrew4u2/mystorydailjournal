@@ -1,9 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// A short sequence of prompts, one at a time, composed into the entry body
-/// only after the user reviews and can lightly edit the result. Never saves
-/// silently (§6, acceptance criteria).
+/// An open-ended sequence of prompts, one at a time, composed into the
+/// entry body only after the user reviews and can lightly edit the result.
+/// Never saves silently (§6, acceptance criteria).
 ///
 /// Every question carries the day's own material with it — the photos taken
 /// around that moment, the names already known — and every question is
@@ -14,7 +14,6 @@ import SwiftData
 /// tagged people, and the questions and answers are kept in the day's Notes.
 struct GuidedEntryView: View {
     @Bindable var record: DayRecord
-    let questions: [GuidedQuestion]
     /// When non-empty (the refinement flow on an auto-generated day), the
     /// composed entry starts from this text and the answers follow it, so
     /// the digest's facts survive alongside the user's own words.
@@ -23,6 +22,7 @@ struct GuidedEntryView: View {
 
     @Environment(\.modelContext) private var context
 
+    @State private var promptQueue: [GuidedQuestion]
     @State private var answers: [String]
     @State private var feelings: [String]
     @State private var chosenNames: [[String]]
@@ -47,13 +47,16 @@ struct GuidedEntryView: View {
         onSave: @escaping () -> Void = {}
     ) {
         self.record = record
-        self.questions = questions
         self.baseText = baseText
         self.onSave = onSave
-        _answers = State(initialValue: Array(repeating: "", count: questions.count))
-        _feelings = State(initialValue: Array(repeating: "", count: questions.count))
-        _chosenNames = State(initialValue: Array(repeating: [], count: questions.count))
-        _placeChoices = State(initialValue: Array(repeating: nil, count: questions.count))
+        let initialQuestions = questions.isEmpty
+            ? [GuidedQuestionBuilder.continuationQuestion(after: [], signals: record.signals ?? [])]
+            : questions
+        _promptQueue = State(initialValue: initialQuestions)
+        _answers = State(initialValue: Array(repeating: "", count: initialQuestions.count))
+        _feelings = State(initialValue: Array(repeating: "", count: initialQuestions.count))
+        _chosenNames = State(initialValue: Array(repeating: [], count: initialQuestions.count))
+        _placeChoices = State(initialValue: Array(repeating: nil, count: initialQuestions.count))
     }
 
     /// Short words for the follow-up under every question — a tap is enough
@@ -65,15 +68,17 @@ struct GuidedEntryView: View {
     var body: some View {
         if isReviewing {
             reviewStep
-        } else if questions.isEmpty {
-            ContentUnavailableView("No questions for this day", systemImage: "questionmark")
         } else {
             promptStep
         }
     }
 
     private var question: GuidedQuestion {
-        questions[min(currentIndex, questions.count - 1)]
+        promptQueue[min(currentIndex, promptQueue.count - 1)]
+    }
+
+    private var hasAnsweredAnything: Bool {
+        currentResponses.contains(where: \.isAnswered)
     }
 
     private var promptContextTitle: String {
@@ -92,7 +97,7 @@ struct GuidedEntryView: View {
                         Text(promptContextTitle)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                        Text("Prompt \(currentIndex + 1) of \(questions.count)")
+                        Text("Prompt \(currentIndex + 1)")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
@@ -128,7 +133,12 @@ struct GuidedEntryView: View {
                     Button("Back") { currentIndex -= 1 }
                 }
                 Spacer()
-                Button(currentIndex == questions.count - 1 ? "Continue" : "Next") {
+                if hasAnsweredAnything {
+                    Button("Review Entry") {
+                        finish()
+                    }
+                }
+                Button(currentIndex == promptQueue.count - 1 ? "Another Question" : "Next") {
                     advance()
                 }
                 .buttonStyle(.borderedProminent)
@@ -329,11 +339,24 @@ struct GuidedEntryView: View {
     }
 
     private func advance() {
-        if currentIndex < questions.count - 1 {
+        if currentIndex < promptQueue.count - 1 {
             currentIndex += 1
         } else {
-            finish()
+            appendContinuationQuestion()
+            currentIndex += 1
         }
+    }
+
+    private func appendContinuationQuestion() {
+        let next = GuidedQuestionBuilder.continuationQuestion(
+            after: currentResponses,
+            signals: record.signals ?? []
+        )
+        promptQueue.append(next)
+        answers.append("")
+        feelings.append("")
+        chosenNames.append([])
+        placeChoices.append(nil)
     }
 
     /// Applies the answers to the day, then shows the composed entry. The
@@ -341,7 +364,7 @@ struct GuidedEntryView: View {
     /// questions *is* the confirmation.
     private func finish() {
         let outcome = GuidedAnswerApplier.apply(
-            questions: questions,
+            questions: promptQueue,
             responses: currentResponses,
             chosenNames: chosenNames,
             placeChoices: placeChoices,
@@ -360,7 +383,7 @@ struct GuidedEntryView: View {
     }
 
     private var currentResponses: [GuidedResponse] {
-        questions.enumerated().map { index, question in
+        promptQueue.enumerated().map { index, question in
             GuidedResponse(
                 question: question.text,
                 answer: answers[index],
