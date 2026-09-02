@@ -4,6 +4,7 @@ import Network
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
+    @EnvironmentObject private var cloudStatus: CloudAccountStatus
     @Environment(\.modelContext) private var context
     @StateObject private var watchedFolder = WatchedFolderManager.shared
 
@@ -75,6 +76,18 @@ struct SettingsView: View {
                         Text(theme.displayName).tag(theme)
                     }
                 }
+            }
+
+            Section("Sync") {
+                Label(
+                    cloudStatus.isAvailable ? "Syncing with private iCloud" : "Saving on this device",
+                    systemImage: cloudStatus.isAvailable ? "icloud" : "icloud.slash"
+                )
+                Text(cloudStatus.isAvailable
+                     ? "Entries, notes, tags, places, and what the diary learns sync across your devices through your private iCloud account."
+                     : "Everything still saves here. Cross-device sync resumes when this device can use your private iCloud account.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Experimental") {

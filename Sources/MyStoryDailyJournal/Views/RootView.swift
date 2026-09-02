@@ -12,7 +12,7 @@ struct RootView: View {
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var quickCapture: QuickCaptureCoordinator
     @Environment(\.modelContext) private var context
-    @State private var layout: Layout = .list
+    @State private var layout: Layout = .month
     @State private var path = NavigationPath()
 
     var body: some View {
