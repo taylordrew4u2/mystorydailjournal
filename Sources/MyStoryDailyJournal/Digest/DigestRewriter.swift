@@ -51,15 +51,15 @@ enum DigestRewriter {
 
     /// Weaves guided-question answers into one coherent first-person entry:
     /// with `digest` when refining an auto-generated day, or from the
-    /// answers alone for a fresh guided entry. The contract is *seamless*
-    /// integration — every answer, however short, offhand, or random, must
-    /// surface in the result, placed where it belongs in the story rather
-    /// than stapled on at the end, and each answer's stated feeling has to
-    /// color how that moment is told. Returns `nil` whenever the on-device
-    /// model can't help (unavailable hardware, thrown error, empty
-    /// response) — the caller keeps the plain paragraph composition as
-    /// fallback. Not gated behind `digestRewriteEnabled`: the user
-    /// explicitly asked for this by walking through the questions.
+    /// answers alone for a fresh guided entry. Every answer, however short,
+    /// offhand, or random, must surface in the result, placed where it
+    /// belongs in the story rather than stapled on at the end, and each
+    /// answer's stated feeling has to shape how that moment is told.
+    /// Returns `nil` whenever the on-device model can't help (unavailable
+    /// hardware, thrown error, empty response) — the caller keeps the plain
+    /// paragraph composition as fallback. Not gated behind
+    /// `digestRewriteEnabled`: the user explicitly asked for this by
+    /// walking through the questions.
     static func weaveEntry(
         digest: String?,
         responses: [GuidedResponse],
@@ -95,9 +95,12 @@ enum DigestRewriter {
         offhand, or seemingly unrelated remarks — nothing the writer said \
         may be dropped, and each detail belongs where it naturally fits in \
         the story, never tacked on at the end.
-        - Make it sound written by a real person, not polished into a \
-        perfect recap. Use first person, contractions when natural, and \
-        small connective phrases. Vary sentence openings so the entry does \
+        - Make it sound written by a real person, not polished, poetic, or \
+        like a perfect recap. Use first person, contractions when natural, \
+        and small connective phrases. Keep the language plain and specific: \
+        no lyrical imagery, no dramatic phrasing, no "the day held..." or \
+        "a quiet thread..." style lines. Vary sentence openings so the \
+        entry does \
         not become "I... I... I..." or a stack of identical clauses; avoid \
         generic lines like "today was a good day" unless the writer \
         actually said that.
@@ -176,12 +179,15 @@ enum DigestRewriter {
         var prompt = """
         \(purpose)
 
-        Rewrite this daily journal summary in a warmer, more natural voice. \
+        Rewrite this daily journal summary in a plain, natural voice. \
         Keep every fact exactly as given — don't add or remove anything, \
         just make it read less like a list. It should sound like the writer \
         jotting down what they remember, not an assistant recapping sensor \
         output. Use first person, contractions where they fit, and plain \
-        human phrasing. Vary sentence openings and sentence lengths so it \
+        human phrasing. Do not make it poetic, lyrical, dramatic, or overly \
+        polished. Avoid lines like "the day held..." or "a quiet thread..." \
+        unless the writer used those exact words. Vary sentence openings \
+        and sentence lengths so it \
         does not read like the same template repeated. Raw metrics are \
         clues, not prose: \
         avoid exact step counts or tracker-like measurements unless the \

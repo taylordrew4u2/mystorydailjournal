@@ -138,9 +138,9 @@ enum GuidedQuestionBuilder {
     private static func continuationTemplates(hasMovement: Bool) -> [(text: String, feelingPrompt: String?)] {
         var templates: [(text: String, feelingPrompt: String?)] = [
             ("What part of the day still feels unfinished?", "How does that part feel now?"),
-            ("What do you want future-you to understand about this day?", "What feeling should stay with it?"),
+            ("What would you want to remember about this day later?", "How do you feel about that now?"),
             ("What kept pulling your attention today?", "How did that attention feel?"),
-            ("Was there a small moment that says more than the big facts?", "How does that small moment sit with you?"),
+            ("Was there a small moment I should include?", "How do you feel about that moment now?"),
             ("What changed between the start of the day and the end?", "How did that change feel?"),
             ("What did you not get to say about this day yet?", "How does it feel saying it now?"),
         ]
@@ -164,7 +164,7 @@ enum GuidedQuestionBuilder {
             "Think about the middle of the day.",
             "Think about the evening.",
             "Think about what changed your mood.",
-            "Think about what future-you would forget first.",
+            "Think about what you might forget first.",
             "Think about what felt private or hard to explain.",
         ]
         return "\(text) \(lenses[(cycle - 1) % lenses.count])"
@@ -304,9 +304,9 @@ enum GuidedQuestionBuilder {
         if attachments.contains(where: { $0.kind == .file }) {
             questions.append(GuidedQuestion(
                 id: "saved.file",
-                text: "You attached a file here. What should future-you know about it?",
+                text: "You attached a file here. What should you remember about it?",
                 subject: .open,
-                feelingPrompt: "What was the weight of that work today?"
+                feelingPrompt: "How did that work feel today?"
             ))
         }
         return questions

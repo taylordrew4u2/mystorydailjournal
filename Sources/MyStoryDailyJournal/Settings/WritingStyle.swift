@@ -27,7 +27,7 @@ enum WritingTone: String, CaseIterable, Identifiable, Codable {
     case reflective
     case upbeat
     case matterOfFact
-    case poetic
+    case plainDetail = "poetic"
 
     var id: String { rawValue }
 
@@ -38,7 +38,7 @@ enum WritingTone: String, CaseIterable, Identifiable, Codable {
         case .reflective: "Reflective"
         case .upbeat: "Upbeat"
         case .matterOfFact: "Matter-of-fact"
-        case .poetic: "Poetic"
+        case .plainDetail: "Plain detail"
         }
     }
 
@@ -46,11 +46,11 @@ enum WritingTone: String, CaseIterable, Identifiable, Codable {
     var promptInstruction: String? {
         switch self {
         case .natural: nil
-        case .warm: "Write in a warm, affectionate voice."
-        case .reflective: "Write in a calm, reflective, thoughtful voice."
-        case .upbeat: "Write in a bright, upbeat, energetic voice."
+        case .warm: "Write in a warm but plain voice."
+        case .reflective: "Write in a calm, thoughtful voice without sounding poetic."
+        case .upbeat: "Write in a lightly upbeat voice without sounding forced."
         case .matterOfFact: "Write plainly and matter-of-factly, without flourishes."
-        case .poetic: "Write with a gently lyrical, poetic touch — without inventing any new facts."
+        case .plainDetail: "Write plainly, with concrete details and no lyrical or poetic phrasing."
         }
     }
 }

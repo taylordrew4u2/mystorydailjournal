@@ -333,8 +333,8 @@ enum DigestComposer {
             return nil
         }
         return media.titles.count == 1
-            ? "\"\(media.titles[0])\" was in the mix."
-            : "Music was in the mix, including \"\(media.titles[0])\"."
+            ? "I listened to \"\(media.titles[0])\"."
+            : "I listened to music, including \"\(media.titles[0])\"."
     }
 
     private static func weatherClause(_ signals: [DaySignal]) -> String? {
