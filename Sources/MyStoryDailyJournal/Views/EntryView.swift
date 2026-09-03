@@ -532,8 +532,7 @@ private enum FactRowsBuilder {
             guard let payload = signal.payload(as: AttachmentPayload.self) else { return nil }
             return attachmentRow(payload, id: id(signal))
         case .socialPost:
-            guard let payload = signal.payload(as: SocialPostPayload.self) else { return nil }
-            return FactRow(id: id(signal), title: "\(payload.network) \(payload.form)", detail: snippet(payload.text))
+            return nil
         case .screenTime:
             return nil
         }

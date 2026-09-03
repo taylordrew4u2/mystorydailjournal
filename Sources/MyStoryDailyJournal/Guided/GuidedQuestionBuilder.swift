@@ -60,7 +60,6 @@ enum GuidedQuestionBuilder {
 
         otherQuestions += eventQuestions(signals: signals, photos: photos)
         otherQuestions += savedItemQuestions(signals: signals)
-        otherQuestions += socialPostQuestions(signals: signals)
         if let photoQuestion = photoQuestion(photos: photos) {
             otherQuestions.append(photoQuestion)
         }
@@ -102,10 +101,6 @@ enum GuidedQuestionBuilder {
         if signals.contains(where: { $0.kind == .sharedItem || $0.kind == .attachment || $0.kind == .fileWatch }) {
             parts.append("notes")
         }
-        if signals.contains(where: { $0.kind == .socialPost }) {
-            parts.append("your posts")
-        }
-
         return ContextSummary(parts: parts)
     }
 
@@ -310,22 +305,6 @@ enum GuidedQuestionBuilder {
             ))
         }
         return questions
-    }
-
-    private static func socialPostQuestions(signals: [DaySignal]) -> [GuidedQuestion] {
-        signals
-            .filter { $0.kind == .socialPost }
-            .sorted { $0.timestamp < $1.timestamp }
-            .compactMap { $0.payload(as: SocialPostPayload.self) }
-            .prefix(2)
-            .map { post in
-                GuidedQuestion(
-                    id: "social.\(post.externalID)",
-                    text: "You posted on \(post.network) today. What was the private side of that moment?",
-                    subject: .open,
-                    feelingPrompt: "How did it feel after sharing it?"
-                )
-            }
     }
 
     private static func activityQuestion(signals: [DaySignal]) -> GuidedQuestion? {

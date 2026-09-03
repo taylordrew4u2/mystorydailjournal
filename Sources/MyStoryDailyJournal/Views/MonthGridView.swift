@@ -5,7 +5,9 @@ import SwiftData
 /// day is covered (written or auto-generated), neutral otherwise (§16).
 struct MonthGridView: View {
     @Query private var days: [DayRecord]
+    @Environment(\.modelContext) private var context
     @State private var monthAnchor: Date = DateUtilities.startOfDay(for: .now)
+    @State private var quickTodayText = ""
 
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
@@ -31,7 +33,13 @@ struct MonthGridView: View {
             }
             .padding(.horizontal)
 
-            Spacer()
+            QuickTodayWriteView(text: $quickTodayText) {
+                saveQuickToday()
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+
+            Spacer(minLength: 0)
         }
     }
 
@@ -56,6 +64,13 @@ struct MonthGridView: View {
             monthAnchor = newAnchor
         }
     }
+
+    private func saveQuickToday() {
+        DayRecordRepository.appendQuickReply(quickTodayText, on: .now, in: context)
+        quickTodayText = ""
+        NotificationManager.cancelPendingRemindersForToday()
+        LiveActivityManager.refreshForToday(isJournaled: true)
+    }
 }
 
 private struct DayCell: View {
@@ -69,5 +84,38 @@ private struct DayCell: View {
             .background(isCovered ? Color.accentColor.opacity(0.18) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .foregroundStyle(.primary)
+    }
+}
+
+private struct QuickTodayWriteView: View {
+    @Binding var text: String
+    let onSave: () -> Void
+
+    private var trimmedText: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Today")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            TextField("Write a quick note", text: $text, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(2...4)
+
+            HStack {
+                Spacer()
+                Button("Save") {
+                    onSave()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(trimmedText.isEmpty)
+            }
+        }
+        .padding(12)
+        .background(Color.secondary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

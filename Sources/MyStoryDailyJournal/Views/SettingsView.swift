@@ -1,6 +1,5 @@
 import SwiftUI
 import UniformTypeIdentifiers
-import Network
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: SettingsStore
@@ -120,19 +119,6 @@ struct SettingsView: View {
                 NavigationLink("Your Data") {
                     YourDataView()
                 }
-            }
-
-            Section {
-                NavigationLink("Import from Instagram") {
-                    SocialImportView()
-                }
-                NavigationLink("Profile links") {
-                    SocialProfileLinksView()
-                }
-            } header: {
-                Text("Social")
-            } footer: {
-                Text("Only your own exports or links you type. Nothing is pulled in until you choose it.")
             }
 
             Section("Watched Folder") {
@@ -490,9 +476,6 @@ struct YourDataView: View {
                 else), and every single thing it has concluded can be read, \
                 muted or deleted under "What this app knows about you" — where \
                 learning can also be turned off entirely.
-                • Profile links — links you type to your own public profiles, \
-                kept only so you can choose to import more of your own public \
-                writing later.
                 • Notes, photos, and files you attach — notes verbatim, \
                 photo identifiers, and file names only, never file contents.
                 """)
@@ -501,149 +484,5 @@ struct YourDataView: View {
             .padding()
         }
         .navigationTitle("Your Data")
-    }
-}
-
-private struct SocialProfileLinksView: View {
-    @EnvironmentObject private var settings: SettingsStore
-    @StateObject private var internet = InternetAvailability()
-    @State private var draft = ""
-    @State private var statusMessage: StatusMessage?
-
-    private struct StatusMessage: Equatable {
-        enum Kind {
-            case error
-            case note
-        }
-
-        var text: String
-        var kind: Kind
-    }
-
-    var body: some View {
-        Form {
-            Section {
-                Label(
-                    internet.isOnline ? "Ready to add links" : "Offline",
-                    systemImage: internet.isOnline ? "wifi" : "wifi.slash"
-                )
-                .foregroundStyle(internet.isOnline ? .primary : .secondary)
-
-                Text(internet.isOnline
-                     ? "Add your own public profile links so the journal can later offer user-started imports of your public writing and learn how you sound from words you choose."
-                     : "Profile links need an internet connection because they point to public pages.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                if settings.socialProfileLinks.isEmpty {
-                    Text("No profile links yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(settings.socialProfileLinks, id: \.self) { link in
-                        if let url = URL(string: link) {
-                            Link(destination: url) {
-                                Text(link)
-                                    .lineLimit(2)
-                            }
-                        } else {
-                            Text(link)
-                                .lineLimit(2)
-                        }
-                    }
-                    .onDelete(perform: removeLinks)
-                }
-            } header: {
-                Text("Your Links")
-            } footer: {
-                Text("These links do not import anything by themselves. They are saved only as places you can choose to import your own writing from later.")
-            }
-
-            if internet.isOnline {
-                Section {
-                    TextField("https://example.com/your-profile", text: $draft)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.URL)
-
-                    Button("Add Link") {
-                        addLink()
-                    }
-                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                    if let statusMessage {
-                        Text(statusMessage.text)
-                            .font(.footnote)
-                            .foregroundStyle(statusMessage.kind == .error ? .red : .secondary)
-                    }
-                } header: {
-                    Text("Add Profile")
-                } footer: {
-                    Text("Only add profiles that are yours. The app stores the links privately and never uses them to identify, contact, or make claims about anyone else.")
-                }
-            }
-        }
-        .navigationTitle("Profile Links")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func addLink() {
-        statusMessage = nil
-        guard let normalized = normalizedProfileLink(from: draft) else {
-            statusMessage = StatusMessage(text: "Enter a valid http or https profile link.", kind: .error)
-            return
-        }
-
-        guard !settings.socialProfileLinks.contains(where: { $0.caseInsensitiveCompare(normalized) == .orderedSame }) else {
-            draft = ""
-            statusMessage = StatusMessage(text: "That link is already saved.", kind: .note)
-            return
-        }
-
-        settings.socialProfileLinks.append(normalized)
-        draft = ""
-        statusMessage = StatusMessage(text: "Saved.", kind: .note)
-    }
-
-    private func removeLinks(at offsets: IndexSet) {
-        settings.socialProfileLinks.remove(atOffsets: offsets)
-    }
-
-    private func normalizedProfileLink(from text: String) -> String? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        let withScheme = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
-        guard let components = URLComponents(string: withScheme),
-              let scheme = components.scheme?.lowercased(),
-              ["http", "https"].contains(scheme),
-              components.host?.isEmpty == false,
-              let url = components.url else {
-            return nil
-        }
-
-        return url.absoluteString
-    }
-}
-
-@MainActor
-private final class InternetAvailability: ObservableObject {
-    @Published var isOnline = false
-
-    private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue(label: "SocialProfileLinksView.InternetAvailability")
-
-    init() {
-        monitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in
-                self?.isOnline = path.status == .satisfied
-            }
-        }
-        monitor.start(queue: queue)
-    }
-
-    deinit {
-        monitor.cancel()
     }
 }
