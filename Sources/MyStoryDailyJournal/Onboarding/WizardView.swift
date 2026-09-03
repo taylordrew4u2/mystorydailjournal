@@ -4,10 +4,10 @@ import SwiftUI
 /// defaults (freeform, generated diary on, no signals, no lock, ink
 /// palette), with no screen showing more than two action buttons.
 ///
-/// M1 shipped steps 1-3 and 6-8 (welcome, writing style, reminder time,
+/// M1 shipped steps 1-3 and 6-8 (welcome, manual writing style, reminder time,
 /// palette, app lock offer, done). M3 added step 4 (signals); M8 adds
 /// step 5 (automations), and generated diary mode is offered up front so
-/// the user can keep automatic writing on or choose facts-only from day one.
+/// the user can choose drafts or facts-only from day one.
 struct WizardView: View {
     private enum Step: Int, CaseIterable {
         case welcome, writingStyle, generatedDiary, reminderTime, signals, automations, palette, appLock, done
@@ -111,16 +111,16 @@ private struct GeneratedDiaryStep: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 36)
 
-            Text("What should unwritten days show?")
+            Text("For days you miss")
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
 
             VStack(alignment: .leading, spacing: 12) {
-                Toggle("Write plain diary drafts", isOn: $settings.generatedDiaryEnabled)
+                Toggle("Create diary drafts", isOn: $settings.generatedDiaryEnabled)
 
                 Text(settings.generatedDiaryEnabled
-                     ? "If you forget to write, My Story can turn collected facts into a simple diary draft you can edit."
-                     : "If you forget to write, My Story will show the collected facts instead of writing for you.")
+                     ? "My Story turns collected facts into a simple draft you can edit."
+                     : "My Story shows collected facts as a list and does not write diary text for you.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -129,7 +129,7 @@ private struct GeneratedDiaryStep: View {
             if settings.generatedDiaryEnabled {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle("Smooth drafts on device", isOn: $settings.digestRewriteEnabled)
-                    Text("Optional. Uses the on-device language model when available. The plain version is always kept as the fallback.")
+                    Text("Optional. Uses the on-device language model when available. The plain draft is always the fallback.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

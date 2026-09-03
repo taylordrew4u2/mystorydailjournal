@@ -6,7 +6,7 @@ struct WritingStyleStep: View {
 
     var body: some View {
         Form {
-            Section("How do you want to write?") {
+            Section("When you write yourself") {
                 Picker("Style", selection: $settings.writingStyle) {
                     ForEach(WritingStyle.allCases) { style in
                         Text(style.displayName).tag(style)
@@ -14,6 +14,10 @@ struct WritingStyleStep: View {
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
+
+                Text("This controls the entry screen when you decide to write. Automatic drafts and facts-only days are set on the next screen.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             if settings.writingStyle != .freeform {
