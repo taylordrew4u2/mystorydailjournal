@@ -91,7 +91,15 @@ struct SettingsView: View {
             }
 
             Section("Experimental") {
+                Toggle("Write generated diary entries", isOn: $settings.generatedDiaryEnabled)
+                Text(settings.generatedDiaryEnabled
+                     ? "When you forget to write, the app can turn collected facts into a plain diary draft."
+                     : "When you forget to write, the app shows the collected facts instead of writing a diary draft.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
                 Toggle("Rewrite digests in a natural voice", isOn: $settings.digestRewriteEnabled)
+                    .disabled(!settings.generatedDiaryEnabled)
                 Text("Uses the on-device language model, when available, to smooth out the rule-based digest. Off by default; the plain version is always the fallback.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)

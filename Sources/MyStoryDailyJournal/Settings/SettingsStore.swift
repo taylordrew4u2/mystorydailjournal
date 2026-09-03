@@ -131,6 +131,13 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(digestRewriteEnabled, forKey: Keys.digestRewriteEnabled) }
     }
 
+    /// Controls whether collected facts are turned into diary prose.
+    /// Turning this off keeps collection and sync working, but shows the
+    /// facts directly instead of writing an automatic entry.
+    @Published var generatedDiaryEnabled: Bool {
+        didSet { defaults.set(generatedDiaryEnabled, forKey: Keys.generatedDiaryEnabled) }
+    }
+
     /// Whether the app keeps a standing picture of the writer — the people,
     /// places, rhythms, themes and voice it has learned from their own
     /// journal (`ProfileLearner`). On by default: the app has always read
@@ -171,6 +178,7 @@ final class SettingsStore: ObservableObject {
         lastDigestCheckDate = defaults.object(forKey: Keys.lastDigestCheckDate) as? Date
         historyBackfillCompleted = defaults.bool(forKey: Keys.historyBackfillCompleted)
         digestRewriteEnabled = defaults.bool(forKey: Keys.digestRewriteEnabled)
+        generatedDiaryEnabled = defaults.object(forKey: Keys.generatedDiaryEnabled) as? Bool ?? true
         profileLearningEnabled = defaults.object(forKey: Keys.profileLearning) as? Bool ?? true
         socialProfileLinks = defaults.stringArray(forKey: Keys.socialProfileLinks) ?? []
     }
@@ -205,6 +213,7 @@ final class SettingsStore: ObservableObject {
         static let lastDigestCheckDate = "settings.lastDigestCheckDate"
         static let historyBackfillCompleted = "settings.historyBackfillCompleted"
         static let digestRewriteEnabled = "settings.digestRewriteEnabled"
+        static let generatedDiaryEnabled = "settings.generatedDiaryEnabled"
         /// Shared with `ProfileLearner`, which runs off the main actor and
         /// reads this key directly.
         static let profileLearning = ProfileLearner.learningEnabledKey

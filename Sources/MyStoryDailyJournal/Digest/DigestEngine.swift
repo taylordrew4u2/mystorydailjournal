@@ -80,7 +80,10 @@ enum DigestEngine {
         // in hand — voice, the people and places on it, the rhythms it
         // falls into.
         let profile = ProfileBrief.brief(for: record, in: context)
-        if jotted.isEmpty {
+        let generatedDiaryEnabled = await settings.generatedDiaryEnabled
+        if !generatedDiaryEnabled {
+            record.bodyText = ""
+        } else if jotted.isEmpty {
             record.bodyText = await DigestRewriter.rewrite(
                 ruleBasedText: ruleBasedText,
                 profile: profile
