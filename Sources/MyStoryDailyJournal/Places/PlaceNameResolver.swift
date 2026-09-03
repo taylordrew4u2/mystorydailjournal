@@ -55,7 +55,7 @@ enum PlaceNameResolver {
         text = text.trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "\"'“”"))
 
-        guard !text.isEmpty, !isNonAnswer(text) else { return nil }
+        guard !text.isEmpty, !isNonAnswer(text), !isActivityDescription(text) else { return nil }
         let words = text.split(separator: " ")
         guard !words.isEmpty, words.count <= maximumWordCount, text.count <= 60 else { return nil }
         // Anything starting with a number is the address coming back at us
@@ -131,6 +131,13 @@ enum PlaceNameResolver {
         "dont remember", "don't remember", "?",
     ]
 
+    private static let activityStarts: Set<String> = [
+        "boarding", "catching", "changing", "commuting", "driving", "dropping",
+        "getting", "heading", "leaving", "meeting", "parking", "picking",
+        "riding", "shopping", "switching", "taking", "transferring", "transfering",
+        "walking", "waiting",
+    ]
+
     private static func strippingLeadingFillers(from text: String) -> String {
         var result = text.trimmingCharacters(in: .whitespaces)
         var didStrip = true
@@ -150,5 +157,15 @@ enum PlaceNameResolver {
 
     private static func isNonAnswer(_ text: String) -> Bool {
         nonAnswers.contains(text.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".?! ")))
+    }
+
+    private static func isActivityDescription(_ text: String) -> Bool {
+        let words = text.lowercased()
+            .split(separator: " ")
+            .map { $0.trimmingCharacters(in: CharacterSet.alphanumerics.inverted) }
+            .filter { !$0.isEmpty }
+        guard let first = words.first else { return false }
+        guard activityStarts.contains(first) else { return false }
+        return words.count >= 2
     }
 }

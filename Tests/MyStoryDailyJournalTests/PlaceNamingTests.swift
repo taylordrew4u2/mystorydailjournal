@@ -37,6 +37,13 @@ final class PlaceNamingTests: XCTestCase {
         ))
     }
 
+    func testVenueNameIgnoresActivityDescriptions() {
+        XCTAssertNil(PlaceNameResolver.venueName(fromAnswer: "transferring trains"))
+        XCTAssertNil(PlaceNameResolver.venueName(fromAnswer: "transfering trains"))
+        XCTAssertNil(PlaceNameResolver.venueName(fromAnswer: "waiting for the bus"))
+        XCTAssertEqual(PlaceNameResolver.venueName(fromAnswer: "transferring trains at Penn Station"), "Penn Station")
+    }
+
     // MARK: - Rewriting text
 
     func testRenameSwapsAddressesForNamesCaseInsensitively() {
