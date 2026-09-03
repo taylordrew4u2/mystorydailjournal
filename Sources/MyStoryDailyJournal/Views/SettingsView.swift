@@ -89,7 +89,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Experimental") {
+            Section("Generated Diary") {
                 Toggle("Write generated diary entries", isOn: $settings.generatedDiaryEnabled)
                 Text(settings.generatedDiaryEnabled
                      ? "When you forget to write, the app can turn collected facts into a plain diary draft."
@@ -116,9 +116,6 @@ struct SettingsView: View {
                 NavigationLink("What this app knows about you") {
                     ProfileReviewView()
                 }
-                NavigationLink("Your Data") {
-                    YourDataView()
-                }
             }
 
             Section("Watched Folder") {
@@ -137,7 +134,11 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Your Data") {
+            Section("Data") {
+                NavigationLink("How your data is used") {
+                    YourDataView()
+                }
+
                 ForEach(DataExporter.Format.allCases) { format in
                     Button("Export as \(format.rawValue)") {
                         do {

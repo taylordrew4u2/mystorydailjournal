@@ -33,11 +33,6 @@ struct RootView: View {
                     MonthGridView()
                 }
             }
-            // Always reachable, over either layout: the app's own way of
-            // asking who the people in this journal are.
-            .overlay(alignment: .bottomTrailing) {
-                FloatingPenButton()
-            }
             .navigationTitle("My Story")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -46,11 +41,13 @@ struct RootView: View {
                     } label: {
                         Image(systemName: "bolt")
                     }
+                    .accessibilityLabel("Quick capture")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(value: DateUtilities.startOfDay(for: .now)) {
                         Image(systemName: "square.and.pencil")
                     }
+                    .accessibilityLabel("Write today")
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     NavigationLink {
@@ -58,6 +55,7 @@ struct RootView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
+                    .accessibilityLabel("Settings")
                 }
             }
             .navigationDestination(for: Date.self) { date in

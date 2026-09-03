@@ -11,23 +11,45 @@ struct MonthGridView: View {
 
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
+    private var today: Date { DateUtilities.startOfDay(for: .now) }
 
     var body: some View {
         VStack(spacing: 12) {
             HStack {
                 Button { shiftMonth(by: -1) } label: { Image(systemName: "chevron.left") }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Previous month")
                 Spacer()
                 Text(monthAnchor, format: .dateTime.month(.wide).year())
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
                 Spacer()
                 Button { shiftMonth(by: 1) } label: { Image(systemName: "chevron.right") }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Next month")
             }
             .padding(.horizontal)
+            .padding(.top, 8)
 
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(daysInMonth(), id: \.self) { date in
-                    NavigationLink(value: date) {
-                        DayCell(date: date, isCovered: coveredDates.contains(date))
+                ForEach(weekdaySymbols, id: \.self) { symbol in
+                    Text(symbol)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+
+                ForEach(Array(calendarCells().enumerated()), id: \.offset) { _, date in
+                    if let date {
+                        NavigationLink(value: date) {
+                            DayCell(
+                                date: date,
+                                isCovered: coveredDates.contains(date),
+                                isToday: date == today
+                            )
+                        }
+                    } else {
+                        Color.clear
+                            .frame(minHeight: 40)
                     }
                 }
             }
@@ -47,6 +69,12 @@ struct MonthGridView: View {
         Set(days.map { DateUtilities.startOfDay(for: $0.date) })
     }
 
+    private var weekdaySymbols: [String] {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let start = calendar.firstWeekday - 1
+        return Array(symbols[start...] + symbols[..<start])
+    }
+
     private func daysInMonth() -> [Date] {
         guard let interval = calendar.dateInterval(of: .month, for: monthAnchor) else { return [] }
         var result: [Date] = []
@@ -57,6 +85,13 @@ struct MonthGridView: View {
             current = next
         }
         return result
+    }
+
+    private func calendarCells() -> [Date?] {
+        guard let firstDate = daysInMonth().first else { return [] }
+        let weekday = calendar.component(.weekday, from: firstDate)
+        let leadingBlanks = (weekday - calendar.firstWeekday + 7) % 7
+        return Array(repeating: nil, count: leadingBlanks) + daysInMonth().map(Optional.some)
     }
 
     private func shiftMonth(by value: Int) {
@@ -76,13 +111,18 @@ struct MonthGridView: View {
 private struct DayCell: View {
     let date: Date
     let isCovered: Bool
+    let isToday: Bool
 
     var body: some View {
         Text(date, format: .dateTime.day())
-            .font(.footnote)
-            .frame(maxWidth: .infinity, minHeight: 36)
-            .background(isCovered ? Color.accentColor.opacity(0.18) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .font(.footnote.weight(isToday ? .semibold : .regular))
+            .frame(maxWidth: .infinity, minHeight: 40)
+            .background(isCovered ? Color.accentColor.opacity(0.14) : Color.secondary.opacity(0.05))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isToday ? Color.accentColor : Color.clear, lineWidth: 1.5)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8))
             .foregroundStyle(.primary)
     }
 }
@@ -97,11 +137,16 @@ private struct QuickTodayWriteView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Today")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Today")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text("Add one quick detail.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
 
-            TextField("Write a quick note", text: $text, axis: .vertical)
+            TextField("What should this day remember?", text: $text, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...4)
 
@@ -116,6 +161,6 @@ private struct QuickTodayWriteView: View {
         }
         .padding(12)
         .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
