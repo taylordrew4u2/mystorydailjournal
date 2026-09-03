@@ -31,7 +31,7 @@ struct MonthGridView: View {
             .padding(.top, 8)
 
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(weekdaySymbols, id: \.self) { symbol in
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
