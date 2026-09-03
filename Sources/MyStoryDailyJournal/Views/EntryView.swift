@@ -55,12 +55,12 @@ struct EntryView: View {
                     }
                     .disabled(record?.bodyText.isEmpty ?? true)
 
-                    Button("Tell it what it got wrong", systemImage: "text.badge.checkmark") {
+                    Button("Correct the entry", systemImage: "text.badge.checkmark") {
                         showCorrection = true
                     }
                     .disabled(isGeneratingPastDay || record == nil)
 
-                    Button("Rewrite with latest details", systemImage: "arrow.clockwise") {
+                    Button("Update from facts", systemImage: "arrow.clockwise") {
                         regenerateDay(force: true, preserveText: true)
                     }
                     .disabled(isGeneratingPastDay || record == nil)
@@ -117,8 +117,8 @@ struct EntryView: View {
                     } else {
                         Label(
                             settings.generatedDiaryEnabled
-                                ? "Generate this day from your phone's data"
-                                : "Collect facts for this day",
+                                ? "Generate from facts"
+                                : "Collect facts",
                             systemImage: settings.generatedDiaryEnabled ? "sparkles" : "list.bullet.clipboard"
                         )
                             .font(.footnote)
@@ -214,7 +214,7 @@ struct EntryView: View {
     private func notesPanel(for record: DayRecord) -> some View {
         @Bindable var record = record
         VStack(alignment: .leading, spacing: 10) {
-            Text("Jot anything — it stays here, and switching back to Diary weaves it into the entry.")
+            Text("Add anything this day should remember. Switching back updates the diary.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
@@ -420,8 +420,8 @@ private struct AutoDayBanner: View {
         HStack(spacing: 8) {
             Image(systemName: generatedDiaryEnabled ? "sparkles" : "list.bullet.clipboard")
             Text(generatedDiaryEnabled
-                 ? "Written automatically from what your phone noticed. Start typing to make it yours."
-                 : "Showing facts collected from this day. Generated diary writing is off.")
+                 ? "Drafted from collected facts. Edit anything that sounds off."
+                 : "Showing collected facts only. Diary drafts are off.")
                 .font(.footnote)
         }
         .foregroundStyle(.secondary)
