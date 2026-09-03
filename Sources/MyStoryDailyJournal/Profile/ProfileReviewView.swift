@@ -15,6 +15,9 @@ struct ProfileReviewView: View {
     @Query(sort: [SortDescriptor(\ProfileFact.observationCount, order: .reverse)])
     private var facts: [ProfileFact]
 
+    @Query(sort: [SortDescriptor(\Person.name)])
+    private var people: [Person]
+
     @State private var isConfirmingForget = false
     @State private var isRelearning = false
 
@@ -23,13 +26,33 @@ struct ProfileReviewView: View {
             Section {
                 Toggle("Keep learning about me", isOn: $settings.profileLearningEnabled)
                 Text("""
-                The app reads your own entries — the people you tag, the \
+                The app reads your own entries — names you mention, the \
                 places you name, when you write, the words you use — and \
                 keeps what it notices so your entries sound like you and \
                 know who you mean. All of it happens on this phone.
                 """)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+            }
+
+            Section {
+                if people.isEmpty {
+                    Text("No names saved yet.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(people) { person in
+                        NavigationLink {
+                            PersonRelationshipEditView(person: person)
+                        } label: {
+                            personRow(person)
+                        }
+                    }
+                }
+            } header: {
+                Text("People")
+            } footer: {
+                Text("Relationships are private writing context. They are not shown as diary tags.")
             }
 
             if facts.isEmpty {
@@ -89,6 +112,16 @@ struct ProfileReviewView: View {
         }
     }
 
+    private func personRow(_ person: Person) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(person.name)
+                .font(.body)
+            Text(person.descriptionForWriting ?? "Relationship not set")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private func row(for fact: ProfileFact) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(fact.sentence)
@@ -139,5 +172,77 @@ struct ProfileReviewView: View {
             ProfileLearner.learn(in: context)
             isRelearning = false
         }
+    }
+}
+
+private struct PersonRelationshipEditView: View {
+    @Bindable var person: Person
+    @Environment(\.modelContext) private var context
+
+    var body: some View {
+        Form {
+            Section {
+                Text(person.name)
+                    .font(.title3.weight(.semibold))
+                Text("Tell the diary who this is so future entries use the right context.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Relationship") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(RelationshipPrompter.commonRelationships, id: \.self) { option in
+                            Button {
+                                person.relationship = option
+                                person.askedAt = .now
+                                try? context.save()
+                            } label: {
+                                Text(option)
+                                    .font(.footnote.weight(.medium))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        person.relationship == option
+                                            ? Color.accentColor
+                                            : Color.secondary.opacity(0.12)
+                                    )
+                                    .foregroundStyle(
+                                        person.relationship == option
+                                            ? Color(uiColor: .systemBackground)
+                                            : Color.primary
+                                    )
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                TextField("Relationship", text: stringBinding(\.relationship))
+            }
+
+            Section {
+                TextField("What they go by, or pronouns", text: stringBinding(\.pronouns))
+                TextField("Private note", text: stringBinding(\.note), axis: .vertical)
+                    .lineLimit(2...5)
+            } footer: {
+                Text("Used only to make private entries read more accurately.")
+            }
+        }
+        .navigationTitle("Person")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func stringBinding(_ keyPath: ReferenceWritableKeyPath<Person, String?>) -> Binding<String> {
+        Binding(
+            get: { person[keyPath: keyPath] ?? "" },
+            set: { value in
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                person[keyPath: keyPath] = trimmed.isEmpty ? nil : trimmed
+                person.askedAt = .now
+                try? context.save()
+            }
+        )
     }
 }

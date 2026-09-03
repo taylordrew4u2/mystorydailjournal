@@ -24,8 +24,8 @@ enum ProfileBrief {
 
         var isEmpty: Bool { people.isEmpty && places.isEmpty && themes.isEmpty }
 
-        /// Everything the day says about itself: who's tagged on it, where
-        /// it went, and what its tags and photos were of.
+        /// Everything the day says about itself: names it already knows,
+        /// where it went, and what its tags and photos were of.
         static func from(_ record: DayRecord) -> Cues {
             let signals: [DaySignal] = record.signals ?? []
 
@@ -64,9 +64,18 @@ enum ProfileBrief {
         budget: Int = defaultBudget
     ) -> String? {
         let facts = (try? context.fetch(FetchDescriptor<ProfileFact>())) ?? []
-        guard !facts.isEmpty else { return nil }
-        let cues = record.map(Cues.from) ?? Cues()
-        return render(select(from: facts, cues: cues, budget: budget))
+        let people = (try? context.fetch(FetchDescriptor<Person>())) ?? []
+        var cues = record.map(Cues.from) ?? Cues()
+        if let record {
+            cues.people += describedPeopleMentioned(in: record, people: people).map(\.name)
+        }
+
+        let peopleBrief = renderPeople(describedPeopleMentioned(in: record, people: people))
+        let factsBrief = render(select(from: facts, cues: cues, budget: budget))
+        let brief = [peopleBrief, factsBrief]
+            .compactMap { $0 }
+            .joined(separator: "\n")
+        return brief.isEmpty ? nil : brief
     }
 
     /// Ranks and trims. Pure, so the choice of what the app tells the model
@@ -132,6 +141,71 @@ enum ProfileBrief {
 
     private static func matches(_ subject: String, _ cues: [String]) -> Bool {
         cues.contains { $0.compare(subject, options: .caseInsensitive) == .orderedSame }
+    }
+
+    private static func describedPeopleMentioned(in record: DayRecord?, people: [Person]) -> [Person] {
+        guard let record else { return [] }
+        let text = signalTexts(in: record).joined(separator: "\n").lowercased()
+        guard !text.isEmpty else { return [] }
+
+        return people.filter { person in
+            guard person.isDescribed else { return false }
+            return personNameCandidates(for: person.name).contains {
+                wholeWordRange(of: $0, in: text) != nil
+            }
+        }
+    }
+
+    private static func personNameCandidates(for name: String) -> [String] {
+        var candidates = [name.lowercased()]
+        if let firstWord = name.split(separator: " ").first, firstWord.count >= 3 {
+            candidates.append(String(firstWord).lowercased())
+        }
+        return candidates
+    }
+
+    private static func signalTexts(in record: DayRecord) -> [String] {
+        (record.signals ?? []).flatMap { signal -> [String] in
+            switch signal.kind {
+            case .calendar:
+                guard let payload = signal.payload(as: CalendarPayload.self) else { return [] }
+                return [payload.title, payload.location].compactMap { $0 } + payload.attendeeNames
+            case .sharedItem:
+                guard let payload = signal.payload(as: SharedItemPayload.self) else { return [] }
+                return [payload.title, payload.text].compactMap { $0 }
+            case .attachment:
+                guard let payload = signal.payload(as: AttachmentPayload.self), payload.kind == .note else { return [] }
+                return [payload.text].compactMap { $0 }
+            case .photo:
+                guard let payload = signal.payload(as: PhotoPayload.self) else { return [] }
+                return payload.personNames
+            default:
+                return []
+            }
+        }
+    }
+
+    private static func wholeWordRange(of needle: String, in haystack: String) -> Range<String.Index>? {
+        var searchStart = haystack.startIndex
+        while let range = haystack.range(of: needle, range: searchStart..<haystack.endIndex) {
+            let startsCleanly = range.lowerBound == haystack.startIndex
+                || !haystack[haystack.index(before: range.lowerBound)].isLetter
+            let endsCleanly = range.upperBound == haystack.endIndex
+                || !haystack[range.upperBound].isLetter
+            if startsCleanly, endsCleanly { return range }
+            guard range.upperBound < haystack.endIndex else { return nil }
+            searchStart = range.upperBound
+        }
+        return nil
+    }
+
+    private static func renderPeople(_ people: [Person]) -> String? {
+        let lines = people.compactMap { person -> String? in
+            guard let description = person.descriptionForWriting else { return nil }
+            return "\(person.name): \(description)."
+        }
+        guard !lines.isEmpty else { return nil }
+        return "Private relationship context: \(lines.joined(separator: " "))"
     }
 
     /// Grouped so the model reads it as a description of a person rather

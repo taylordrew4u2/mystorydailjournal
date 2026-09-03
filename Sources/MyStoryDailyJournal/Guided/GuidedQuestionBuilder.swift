@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// Builds the guided questions for one day out of what the phone already
 /// noticed. Every question is about something concrete — a place, an
@@ -34,7 +35,8 @@ enum GuidedQuestionBuilder {
     static func questions(
         signals: [DaySignal],
         timeZoneIdentifier: String = TimeZone.current.identifier,
-        aliases: [String: String] = PlaceAliasStore.aliases()
+        aliases: [String: String] = PlaceAliasStore.aliases(),
+        describedPeople: Set<String> = []
     ) -> [GuidedQuestion] {
         var calendar = Calendar.current
         calendar.timeZone = TimeZone(identifier: timeZoneIdentifier) ?? .current
@@ -48,6 +50,7 @@ enum GuidedQuestionBuilder {
             .sorted { $0.signal.timestamp < $1.signal.timestamp }
 
         var addressQuestions: [GuidedQuestion] = []
+        var relationshipQuestions: [GuidedQuestion] = []
         var otherQuestions: [GuidedQuestion] = []
 
         for question in placeQuestions(signals: signals, photos: photos, aliases: aliases) {
@@ -60,6 +63,7 @@ enum GuidedQuestionBuilder {
 
         otherQuestions += eventQuestions(signals: signals, photos: photos)
         otherQuestions += savedItemQuestions(signals: signals)
+        relationshipQuestions += mentionedPersonQuestions(signals: signals, describedPeople: describedPeople)
         if let photoQuestion = photoQuestion(photos: photos) {
             otherQuestions.append(photoQuestion)
         }
@@ -76,7 +80,8 @@ enum GuidedQuestionBuilder {
             otherQuestions.append(weatherQuestion)
         }
 
-        let specific = addressQuestions + otherQuestions.prefix(max(0, specificQuestionLimit - addressQuestions.count))
+        let required = addressQuestions + relationshipQuestions
+        let specific = required + otherQuestions.prefix(max(0, specificQuestionLimit - required.count))
         return specific + openQuestions
     }
 
@@ -307,6 +312,83 @@ enum GuidedQuestionBuilder {
         return questions
     }
 
+    private static func mentionedPersonQuestions(signals: [DaySignal], describedPeople: Set<String>) -> [GuidedQuestion] {
+        let described = Set(describedPeople.map { $0.normalizedPersonKey })
+        let names = mentionedPersonNames(in: signals)
+            .filter { !described.contains($0.normalizedPersonKey) }
+
+        return names.map { name in
+            GuidedQuestion(
+                id: "person.mentioned.\(name.normalizedPersonKey)",
+                text: "Who is \(name) to you?",
+                subject: .mentionedPerson(name: name),
+                feelingPrompt: nil
+            )
+        }
+    }
+
+    private static func mentionedPersonNames(in signals: [DaySignal]) -> [String] {
+        let texts = signals.flatMap { signal -> [String] in
+            switch signal.kind {
+            case .calendar:
+                guard let payload = signal.payload(as: CalendarPayload.self) else { return [] }
+                return [payload.title, payload.location].compactMap { $0 } + payload.attendeeNames
+            case .sharedItem:
+                guard let payload = signal.payload(as: SharedItemPayload.self) else { return [] }
+                return [payload.title, payload.text].compactMap { $0 }
+            case .attachment:
+                guard let payload = signal.payload(as: AttachmentPayload.self), payload.kind == .note else { return [] }
+                return [payload.text].compactMap { $0 }
+            case .photo:
+                guard let payload = signal.payload(as: PhotoPayload.self) else { return [] }
+                return payload.personNames
+            default:
+                return []
+            }
+        }
+
+        return deduplicated(texts.flatMap(personNames(in:)))
+    }
+
+    private static func personNames(in text: String) -> [String] {
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        tagger.string = text
+
+        var names: [String] = []
+        tagger.enumerateTags(
+            in: text.startIndex..<text.endIndex,
+            unit: .word,
+            scheme: .nameType,
+            options: [.omitWhitespace, .omitPunctuation, .joinNames]
+        ) { tag, range in
+            guard tag == .personalName else { return true }
+            let name = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard isUsefulPersonName(name) else { return true }
+            names.append(name)
+            return true
+        }
+        return names
+    }
+
+    private static func isUsefulPersonName(_ name: String) -> Bool {
+        let words = name.split(separator: " ")
+        guard 1...4 ~= words.count else { return false }
+        guard words.contains(where: { $0.count >= 3 }) else { return false }
+        let blocked = ["Home", "Work", "Today", "Tomorrow", "Yesterday"]
+        return !blocked.contains { $0.caseInsensitiveCompare(name) == .orderedSame }
+    }
+
+    private static func deduplicated(_ names: [String]) -> [String] {
+        var seen = Set<String>()
+        var unique: [String] = []
+        for name in names {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, seen.insert(trimmed.normalizedPersonKey).inserted else { continue }
+            unique.append(trimmed)
+        }
+        return unique
+    }
+
     private static func activityQuestion(signals: [DaySignal]) -> GuidedQuestion? {
         guard let activity = signals.first(where: { $0.kind == .activity })?.payload(as: ActivityPayload.self) else {
             return nil
@@ -451,5 +533,12 @@ private extension String {
     var nilIfBlank: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var normalizedPersonKey: String {
+        lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: ".")
     }
 }

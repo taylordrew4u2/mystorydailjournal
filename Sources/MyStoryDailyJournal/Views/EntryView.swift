@@ -134,9 +134,6 @@ struct EntryView: View {
             TagChipRow(date: date)
                 .padding(.top, 12)
 
-            PersonChipsSection(record: record)
-                .padding(.top, 8)
-
             if DateUtilities.startOfDay(for: date) == DateUtilities.startOfDay(for: .now) {
                 ScreenTimePanel()
                     .padding(.top, 8)
@@ -272,7 +269,8 @@ struct EntryView: View {
     private func guidedQuestions(for record: DayRecord) -> [GuidedQuestion] {
         let signalQuestions = GuidedQuestionBuilder.questions(
             signals: record.signals ?? [],
-            timeZoneIdentifier: record.timeZoneIdentifier
+            timeZoneIdentifier: record.timeZoneIdentifier,
+            describedPeople: describedPeople()
         )
         let savedPrompts = GuidedQuestion.from(settings.activeQuestionSet)
         let learnedPrompts = learnedQuestions()
@@ -304,6 +302,11 @@ struct EntryView: View {
             return $0.lastObserved > $1.lastObserved
         }
         return ranked.compactMap(Self.learnedQuestion).prefix(limit).map { $0 }
+    }
+
+    private func describedPeople() -> Set<String> {
+        let people = (try? context.fetch(FetchDescriptor<Person>())) ?? []
+        return Set(people.filter(\.isDescribed).map(\.name))
     }
 
     private static func learnedQuestion(for fact: ProfileFact) -> GuidedQuestion? {
@@ -586,9 +589,6 @@ private enum FactRowsBuilder {
     }
 
     private static func faceSummary(_ payload: PhotoPayload) -> String {
-        if !payload.personNames.isEmpty {
-            return "With \(payload.personNames.joined(separator: ", "))"
-        }
         return payload.faceCount == 1 ? "1 face" : "\(payload.faceCount) faces"
     }
 

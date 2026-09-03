@@ -452,9 +452,9 @@ struct YourDataView: View {
 
                 • Steps and workouts — daily totals and workout summaries \
                 from Apple Health. Never leaves your journal.
-                • Calendar — event titles, times, and locations. Attendee \
-                names are only tagging suggestions; they never enter a story \
-                unless you add them. Never leaves your journal.
+                • Calendar — event titles, times, and locations. Names can \
+                become private relationship prompts; they are not shown as \
+                diary tags. Never leaves your journal.
                 • Photos — counts, timestamps, and where photos were taken; \
                 never the images. One photo's location per day may go to \
                 Apple (no one else) for a place name and weather.
@@ -469,7 +469,7 @@ struct YourDataView: View {
                 are never sent anywhere to be rewritten.
                 • Personalization — the app's purpose is to remember for you \
                 without sounding like a tracker. To do that, it reads your own \
-                entries and keeps what it notices: the people you tag, the \
+                entries and keeps what it notices: names you mention, the \
                 places you name, the rhythms of your week, recurring themes, \
                 and how you write. This is worked out on this phone, stored \
                 with your journal (so it syncs to your own iCloud and nowhere \

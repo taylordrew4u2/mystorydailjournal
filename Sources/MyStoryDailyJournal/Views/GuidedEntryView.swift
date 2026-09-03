@@ -11,8 +11,9 @@ import SwiftData
 /// followed by "how did that feel?", so the entry ends up carrying the
 /// writer's emotional response and not just the facts. Finishing the
 /// questions applies what was said to the whole day automatically
-/// (`GuidedAnswerApplier`): addresses become place names, names become
-/// tagged people, and the questions and answers are kept in the day's Notes.
+/// (`GuidedAnswerApplier`): addresses become place names, relationship
+/// answers become private context, and the questions and answers are kept
+/// in the day's Notes.
 struct GuidedEntryView: View {
     @Bindable var record: DayRecord
     /// When non-empty (the refinement flow on an auto-generated day), the

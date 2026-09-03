@@ -12,8 +12,8 @@ enum RelationshipPrompter {
     /// enough not to nag, short enough that a change of mind is easy.
     static let skipInterval: TimeInterval = 14 * 24 * 60 * 60
 
-    /// People worth asking about, most-present first: tagged on at least
-    /// one day, not yet described, and not skipped recently.
+    /// People worth asking about, most-present first: already saved by the
+    /// writer, not yet described, and not skipped recently.
     static func peopleToAskAbout(
         in context: ModelContext,
         now: Date = .now,

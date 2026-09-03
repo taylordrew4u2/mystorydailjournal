@@ -113,7 +113,7 @@ struct RelationshipSheet: View {
             Text(
                 describedCount > 0
                     ? "Your entries will know who they are from now on."
-                    : "Tag someone on a day and the pen will ask who they are."
+                    : "When a name shows up in a note or event, guided prompts can ask who they are."
             )
         }
     }

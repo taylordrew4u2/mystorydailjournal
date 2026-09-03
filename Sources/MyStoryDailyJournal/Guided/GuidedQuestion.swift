@@ -20,6 +20,9 @@ struct GuidedQuestion: Identifiable, Equatable, Sendable {
         case photos
         /// Faces the phone counted in a shot — the answer says who they are.
         case peopleInPhoto(faceCount: Int)
+        /// A name found in the user's own note, event, or confirmed photo
+        /// names. The answer records who they are to the writer.
+        case mentionedPerson(name: String)
         case activity
     }
 
