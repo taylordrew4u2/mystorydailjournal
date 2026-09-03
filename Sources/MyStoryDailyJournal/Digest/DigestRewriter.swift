@@ -99,10 +99,9 @@ enum DigestRewriter {
         like a perfect recap. Use first person, contractions when natural, \
         and small connective phrases. Keep the language plain and specific: \
         no lyrical imagery, no dramatic phrasing, no "the day held..." or \
-        "a quiet thread..." style lines. Vary sentence openings so the \
-        entry does \
-        not become "I... I... I..." or a stack of identical clauses; avoid \
-        generic lines like "today was a good day" unless the writer \
+        "a thread ran through..." style lines. Vary sentence openings so the entry \
+        does not become "I... I... I..." or a stack of identical clauses; \
+        avoid generic lines like "today was a good day" unless the writer \
         actually said that.
         - Keep every fact exactly as given: people, places, event names, \
         numbers, feelings. Do not invent anything that isn't stated.
@@ -185,10 +184,9 @@ enum DigestRewriter {
         jotting down what they remember, not an assistant recapping sensor \
         output. Use first person, contractions where they fit, and plain \
         human phrasing. Do not make it poetic, lyrical, dramatic, or overly \
-        polished. Avoid lines like "the day held..." or "a quiet thread..." \
+        polished. Avoid lines like "the day held..." or "a thread ran through..." \
         unless the writer used those exact words. Vary sentence openings \
-        and sentence lengths so it \
-        does not read like the same template repeated. Raw metrics are \
+        and sentence lengths so it does not read like the same template repeated. Raw metrics are \
         clues, not prose: \
         avoid exact step counts or tracker-like measurements unless the \
         writer explicitly wrote them. Do not explain every source just \

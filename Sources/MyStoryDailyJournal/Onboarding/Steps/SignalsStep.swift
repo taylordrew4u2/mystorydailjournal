@@ -21,7 +21,7 @@ struct SignalsStep: View {
         [
             SignalInfo(
                 title: "Steps and workouts",
-                benefit: "A quiet, low-effort signal for days you don't write — how much you moved, and any workouts logged.",
+                benefit: "Useful context for days you don't write: how much you moved, and any workouts logged.",
                 systemImage: "figure.walk",
                 disclosure: .health,
                 onEnable: {
@@ -31,7 +31,7 @@ struct SignalsStep: View {
             ),
             SignalInfo(
                 title: "Calendar events",
-                benefit: "Events you actually attended help fill in an auto-generated day, and can suggest who you were with.",
+                benefit: "Event titles, times, and locations help fill in an auto-generated day without guessing what happened.",
                 systemImage: "calendar",
                 disclosure: .calendar,
                 onEnable: {

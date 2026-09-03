@@ -33,7 +33,7 @@ struct SettingsView: View {
                         Text(tone.displayName).tag(tone)
                     }
                 }
-                Text("The voice used when entries are written or rewritten for you. The app's job is to remember the day for you, keep asking useful questions when it needs more, and write in a voice that sounds like yours. Learning stays on this phone.")
+                Text("The voice used when entries are written or rewritten for you. The app's job is to remember the day for you, keep asking useful questions when it needs more, and write in a voice that sounds like yours. Learning stays private and syncs through your iCloud when available.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -336,7 +336,7 @@ struct DataSourceDisclosure: Identifiable {
         title: "Steps and workouts",
         reads: "Step count, distance, workouts, and sleep hours from Apple Health. Read-only — nothing is ever written to Health.",
         keeps: "Daily totals and one-line workout summaries, stored with that day's entry.",
-        leavesPhone: "Nothing. Health data stays on this phone, and in your own private iCloud if sync is on. Never the developer, never anyone else.",
+        leavesPhone: "Nothing goes to the developer or anyone else. The saved diary summary can sync to your private iCloud when sync is available.",
         why: "So days you don't write still remember how much you moved and slept."
     )
 
@@ -364,7 +364,7 @@ struct DataSourceDisclosure: Identifiable {
         reads: "Recently played songs from your music library.",
         keeps: "Song titles, stored with that day's entry.",
         leavesPhone: "Nothing.",
-        why: "So a day can remember what soundtracked it."
+        why: "So a day can remember what you listened to."
     )
 
     static let location = DataSourceDisclosure(

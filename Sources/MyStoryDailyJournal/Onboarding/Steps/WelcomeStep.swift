@@ -9,7 +9,7 @@ struct WelcomeStep: View {
                 .foregroundStyle(.secondary)
             Text("My Story")
                 .font(.largeTitle.weight(.semibold))
-            Text("Every day gets a record. Write it yourself, or let the app quietly note what happened.")
+            Text("Every day gets a record. Write it yourself, or let the app make a draft from what it knows.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)

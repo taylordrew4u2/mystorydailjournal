@@ -86,7 +86,7 @@ struct GuidedEntryView: View {
         if context.isActive {
             return "This day has \(context.shortDescription)"
         }
-        return "A quiet day, with open prompts ready"
+        return "No details yet, with open prompts ready"
     }
 
     private var promptStep: some View {
