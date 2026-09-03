@@ -19,8 +19,8 @@ struct GuidedResponse: Equatable, Sendable {
         switch (trimmedAnswer.isEmpty, trimmedFeeling.isEmpty) {
         case (true, true): ""
         case (false, true): trimmedAnswer
-        case (true, false): "Felt \(trimmedFeeling)."
-        case (false, false): "\(trimmedAnswer) Felt \(trimmedFeeling)."
+        case (true, false): "It felt \(trimmedFeeling)."
+        case (false, false): "\(trimmedAnswer) It felt \(trimmedFeeling)."
         }
     }
 }

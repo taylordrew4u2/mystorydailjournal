@@ -59,10 +59,15 @@ struct GuidedEntryView: View {
         _placeChoices = State(initialValue: Array(repeating: nil, count: initialQuestions.count))
     }
 
-    /// Short words for the follow-up under every question — a tap is enough
-    /// to give the entry a tone, and anything more specific can be typed.
-    private static let feelingChips = [
-        "good", "happy", "calm", "grateful", "tired", "stressed", "sad", "excited", "proud",
+    /// Short, plain words for the follow-up under every question. A tap is
+    /// enough to give the entry a mood, and anything more specific can be
+    /// typed.
+    private static let feelingChipRows = [
+        ["okay", "good", "happy", "calm", "settled", "relieved", "grateful", "proud"],
+        ["tired", "drained", "stressed", "anxious", "overwhelmed", "frustrated", "sad", "lonely"],
+        ["excited", "hopeful", "focused", "busy", "restless", "unsure", "confused", "awkward"],
+        ["peaceful", "comfortable", "close", "seen", "hurt", "annoyed", "guilty", "embarrassed"],
+        ["bored", "numb", "off", "heavy", "lighter", "surprised", "motivated", "proud but tired"],
     ]
 
     var body: some View {
@@ -250,10 +255,14 @@ struct GuidedEntryView: View {
                 .foregroundStyle(.secondary)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Self.feelingChips, id: \.self) { feeling in
-                        chip(feeling, isSelected: containsFeeling(feeling)) {
-                            toggleFeeling(feeling)
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Self.feelingChipRows, id: \.self) { row in
+                        HStack(spacing: 8) {
+                            ForEach(row, id: \.self) { feeling in
+                                chip(feeling, isSelected: containsFeeling(feeling)) {
+                                    toggleFeeling(feeling)
+                                }
+                            }
                         }
                     }
                 }

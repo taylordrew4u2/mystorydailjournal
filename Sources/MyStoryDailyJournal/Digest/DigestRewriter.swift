@@ -105,9 +105,12 @@ enum DigestRewriter {
         actually said that.
         - Keep every fact exactly as given: people, places, event names, \
         numbers, feelings. Do not invent anything that isn't stated.
-        - Where the writer said how something felt, let that feeling shape \
-        how that part of the day is told — in the writing itself, never as \
-        a label or a separate line about emotions.
+        - Where the writer said how something felt, let that feeling change \
+        the wording a little: a tired part can sound shorter, a relieved \
+        part can breathe more, a stressful part can stay direct. Keep it \
+        comforting and diary-like, but not cute, cartoonish, dramatic, or \
+        intense. Never turn feelings into a label or a separate emotion \
+        report.
         - Places have names: if the material gives a venue name for a \
         street address, use the name and never write the address.
         - Never mention the questions, or that any of this came from a \
@@ -186,7 +189,9 @@ enum DigestRewriter {
         human phrasing. Do not make it poetic, lyrical, dramatic, or overly \
         polished. Avoid lines like "the day held..." or "a thread ran through..." \
         unless the writer used those exact words. Vary sentence openings \
-        and sentence lengths so it does not read like the same template repeated. Raw metrics are \
+        and sentence lengths so it does not read like the same template repeated. \
+        If the summary includes feelings, let them lightly affect the wording \
+        without making the entry intense or cute. Raw metrics are \
         clues, not prose: \
         avoid exact step counts or tracker-like measurements unless the \
         writer explicitly wrote them. Do not explain every source just \
