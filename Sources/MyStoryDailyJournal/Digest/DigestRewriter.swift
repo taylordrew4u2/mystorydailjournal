@@ -95,9 +95,9 @@ enum DigestRewriter {
         offhand, or seemingly unrelated remarks — nothing the writer said \
         may be dropped, and each detail belongs where it naturally fits in \
         the story, never tacked on at the end.
-        - Make it sound written by a real person, not polished, poetic, or \
-        like a perfect recap. Use first person, contractions when natural, \
-        and small connective phrases. Keep the language plain and specific: \
+        - Make it sound written by a real person, not robotic, polished, \
+        poetic, or like a perfect recap. Use first person, contractions when \
+        natural, and small connective phrases. Keep the language plain and specific: \
         no lyrical imagery, no dramatic phrasing, no "the day held..." or \
         "a thread ran through..." style lines. Vary sentence openings so the entry \
         does not become "I... I... I..." or a stack of identical clauses; \
@@ -184,7 +184,7 @@ enum DigestRewriter {
         Rewrite this daily journal summary in a plain, natural voice. \
         Keep every fact exactly as given — don't add or remove anything, \
         just make it read less like a list. It should sound like the writer \
-        jotting down what they remember, not an assistant recapping sensor \
+        jotting down what they remember, not a robotic assistant recapping sensor \
         output. Use first person, contractions where they fit, and plain \
         human phrasing. Do not make it poetic, lyrical, dramatic, or overly \
         polished. Avoid lines like "the day held..." or "a thread ran through..." \

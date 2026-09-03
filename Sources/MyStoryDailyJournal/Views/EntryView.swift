@@ -28,7 +28,6 @@ struct EntryView: View {
     @State private var showPhotoPicker = false
     @State private var pickedPhotos: [PhotosPickerItem] = []
     @State private var showFileImporter = false
-    @State private var showRegenerateOptions = false
     @State private var showShareSheet = false
     @State private var showCorrection = false
 
@@ -48,42 +47,27 @@ struct EntryView: View {
                     Button("Add a note", systemImage: "note.text") { showAddNote = true }
                     Button("Add photos", systemImage: "photo.on.rectangle") { showPhotoPicker = true }
                     Button("Attach a file", systemImage: "doc") { showFileImporter = true }
+
+                    Divider()
+
+                    Button("Share", systemImage: "square.and.arrow.up") {
+                        showShareSheet = true
+                    }
+                    .disabled(record?.bodyText.isEmpty ?? true)
+
+                    Button("Tell it what it got wrong", systemImage: "text.badge.checkmark") {
+                        showCorrection = true
+                    }
+                    .disabled(isGeneratingPastDay || record == nil)
+
+                    Button("Rewrite with latest details", systemImage: "arrow.clockwise") {
+                        regenerateDay(force: true, preserveText: true)
+                    }
+                    .disabled(isGeneratingPastDay || record == nil)
                 } label: {
-                    Image(systemName: "paperclip")
+                    Image(systemName: "ellipsis.circle")
                 }
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showShareSheet = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-                .disabled(record?.bodyText.isEmpty ?? true)
-            }
-            // The always-there place to rebuild a day after adding new
-            // things — days with the user's own words confirm first.
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showRegenerateOptions = true
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .disabled(isGeneratingPastDay || record == nil)
-            }
-        }
-        .confirmationDialog("Rewrite this day?", isPresented: $showRegenerateOptions, titleVisibility: .visible) {
-            Button("Tell it what it got wrong") {
-                showCorrection = true
-            }
-            Button("Keep my words and add the new details") {
-                regenerateDay(force: true, preserveText: true)
-            }
-            Button("Start over from my phone's data", role: .destructive) {
-                regenerateDay(force: true, preserveText: false)
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Telling it what went wrong fixes this day and every day after it. \u{201C}Keep my words\u{201D} weaves what you wrote into the rebuilt story, along with anything you've attached.")
         }
         .alert("Add a note to this day", isPresented: $showAddNote) {
             TextField("What should this day remember?", text: $noteText)

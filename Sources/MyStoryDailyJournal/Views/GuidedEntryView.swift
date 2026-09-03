@@ -3,7 +3,8 @@ import SwiftData
 
 /// An open-ended sequence of prompts, one at a time, composed into the
 /// entry body only after the user reviews and can lightly edit the result.
-/// Never saves silently (§6, acceptance criteria).
+/// Never saves silently (§6, acceptance criteria), and the main path stays
+/// two taps after answering: Done, then Save.
 ///
 /// Every question carries the day's own material with it — the photos taken
 /// around that moment, the names already known — and every question is
@@ -133,20 +134,25 @@ struct GuidedEntryView: View {
                 .padding()
             }
 
-            HStack {
-                if currentIndex > 0 {
-                    Button("Back") { currentIndex -= 1 }
-                }
-                Spacer()
+            HStack(spacing: 12) {
                 if hasAnsweredAnything {
-                    Button("Review Entry") {
+                    Button("Done") {
                         finish()
                     }
+                    .buttonStyle(.borderedProminent)
                 }
-                Button(currentIndex == promptQueue.count - 1 ? "Another Question" : "Next") {
-                    advance()
+
+                if hasAnsweredAnything {
+                    Button(continueButtonTitle) {
+                        advance()
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button(continueButtonTitle) {
+                        advance()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             }
             .padding()
         }
@@ -227,6 +233,10 @@ struct GuidedEntryView: View {
     /// or that moment — and otherwise the day's camera roll.
     private var shownPhotos: [String] {
         question.photoAssetIdentifiers.isEmpty ? dayPhotos : question.photoAssetIdentifiers
+    }
+
+    private var continueButtonTitle: String {
+        return hasAnsweredAnything ? "More" : "Skip"
     }
 
     /// Names the writer already gave directly. Tapping one writes it into
