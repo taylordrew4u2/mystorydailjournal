@@ -104,7 +104,9 @@ enum DigestRewriter {
         avoid generic lines like "today was a good day" unless the writer \
         actually said that.
         - Keep every fact exactly as given: people, places, event names, \
-        numbers, feelings. Do not invent anything that isn't stated.
+        numbers, feelings. Do not invent anything that isn't stated. Do not \
+        add generic transitions, lessons, meanings, closure, or filler \
+        phrases just to make the entry sound complete.
         - Where the writer said how something felt, let that feeling change \
         the wording a little: a tired part can sound shorter, a relieved \
         part can breathe more, a stressful part can stay direct. Keep it \
@@ -116,6 +118,8 @@ enum DigestRewriter {
         - Never mention the questions, or that any of this came from a \
         question-and-answer session. The result reads as if the writer \
         wrote it in one sitting.
+        - If the material is thin, keep the entry short. A sparse true entry \
+        is better than a fuller entry padded with guesses.
         - Plain text only. No emoji, no headings, no lists.
         """
         if !omitPlaces.isEmpty {
@@ -183,7 +187,8 @@ enum DigestRewriter {
 
         Rewrite this daily journal summary in a plain, natural voice. \
         Keep every fact exactly as given — don't add or remove anything, \
-        just make it read less like a list. It should sound like the writer \
+        and do not add generic meaning, lessons, closure, or filler phrases. \
+        Just make it read less like a list. It should sound like the writer \
         jotting down what they remember, not a robotic assistant recapping sensor \
         output. Use first person, contractions where they fit, and plain \
         human phrasing. Do not make it poetic, lyrical, dramatic, or overly \
@@ -195,7 +200,8 @@ enum DigestRewriter {
         clues, not prose: \
         avoid exact step counts or tracker-like measurements unless the \
         writer explicitly wrote them. Do not explain every source just \
-        because it exists. No emoji, plain text only.
+        because it exists. If there is not much material, keep it short \
+        instead of padding it. No emoji, plain text only.
         """
         if let toneInstruction = await SettingsStore.shared.writingTone.promptInstruction {
             prompt += " \(toneInstruction)"

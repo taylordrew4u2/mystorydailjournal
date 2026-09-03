@@ -60,7 +60,7 @@ struct EntryView: View {
                     }
                     .disabled(isGeneratingPastDay || record == nil)
 
-                    Button("Update from facts", systemImage: "arrow.clockwise") {
+                    Button("Regenerate with latest mind", systemImage: "arrow.clockwise") {
                         regenerateDay(force: true, preserveText: true)
                     }
                     .disabled(isGeneratingPastDay || record == nil)
@@ -108,19 +108,14 @@ struct EntryView: View {
                     .padding(.top, 8)
             }
 
-            if canGeneratePastDay(record) {
+            if let regenerateAction = regenerationAction(for: record) {
                 Button {
-                    regenerateDay()
+                    regenerateDay(force: regenerateAction.force, preserveText: regenerateAction.preserveText)
                 } label: {
                     if isGeneratingPastDay {
                         ProgressView()
                     } else {
-                        Label(
-                            settings.generatedDiaryEnabled
-                                ? "Generate from facts"
-                                : "Collect facts",
-                            systemImage: settings.generatedDiaryEnabled ? "sparkles" : "list.bullet.clipboard"
-                        )
+                        Label(regenerateAction.title, systemImage: regenerateAction.systemImage)
                             .font(.footnote)
                     }
                 }
@@ -247,14 +242,28 @@ struct EntryView: View {
         }
     }
 
-    /// A past day with nothing on it yet — today is excluded because the
-    /// digest for today is composed after the day ends, and user-written
-    /// days must never be regenerated over.
-    private func canGeneratePastDay(_ record: DayRecord) -> Bool {
-        DateUtilities.startOfDay(for: date) < DateUtilities.startOfDay(for: .now)
-            && !record.isUserWritten
-            && record.source == .blank
-            && record.bodyText.isEmpty
+    /// Old days can be rebuilt with the current diary rules. Blank days use
+    /// the normal generate path; existing entries use the explicit override
+    /// and pin the current words first, so the user's writing is preserved
+    /// as context for the new version.
+    private func regenerationAction(for record: DayRecord) -> RegenerationAction? {
+        guard DateUtilities.startOfDay(for: date) < DateUtilities.startOfDay(for: .now) else { return nil }
+
+        if !record.isUserWritten, record.source == .blank, record.bodyText.isEmpty {
+            return RegenerationAction(
+                title: settings.generatedDiaryEnabled ? "Generate from facts" : "Collect facts",
+                systemImage: settings.generatedDiaryEnabled ? "sparkles" : "list.bullet.clipboard",
+                force: false,
+                preserveText: true
+            )
+        }
+
+        return RegenerationAction(
+            title: settings.generatedDiaryEnabled ? "Regenerate with latest mind" : "Refresh facts",
+            systemImage: settings.generatedDiaryEnabled ? "arrow.clockwise" : "list.bullet.clipboard",
+            force: true,
+            preserveText: true
+        )
     }
 
     private func shouldShowFactsOnly(for record: DayRecord) -> Bool {
@@ -411,6 +420,13 @@ private extension String {
     var normalizedPromptText: String {
         trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
+}
+
+private struct RegenerationAction {
+    let title: String
+    let systemImage: String
+    let force: Bool
+    let preserveText: Bool
 }
 
 /// Shown on an auto-generated day so the user knows this isn't their own
