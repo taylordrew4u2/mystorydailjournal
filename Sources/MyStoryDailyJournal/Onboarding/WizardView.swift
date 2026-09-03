@@ -1,16 +1,11 @@
 import SwiftUI
 
-/// First-run setup (§7). The wizard can be completed by accepting sensible
-/// defaults (freeform, generated diary on, no signals, no lock, ink
-/// palette), with no screen showing more than two action buttons.
-///
-/// M1 shipped steps 1-3 and 6-8 (welcome, manual writing style, reminder time,
-/// palette, app lock offer, done). M3 added step 4 (signals); M8 adds
-/// step 5 (automations), and generated diary mode is offered up front so
-/// the user can choose drafts or facts-only from day one.
+/// First-run setup keeps only the decisions needed to start journaling.
+/// Deeper personalization stays in Settings so setup does not feel like a
+/// checklist before the user has even seen the diary.
 struct WizardView: View {
     private enum Step: Int, CaseIterable {
-        case welcome, writingStyle, generatedDiary, reminderTime, signals, automations, palette, appLock, done
+        case welcome, diaryMode, signals, reminderTime, done
     }
 
     @EnvironmentObject private var settings: SettingsStore
@@ -25,20 +20,12 @@ struct WizardView: View {
                 switch step {
                 case .welcome:
                     WelcomeStep()
-                case .writingStyle:
-                    WritingStyleStep()
-                case .generatedDiary:
-                    GeneratedDiaryStep()
-                case .reminderTime:
-                    ReminderTimeStep()
+                case .diaryMode:
+                    DiaryModeStep()
                 case .signals:
                     SignalsStep(onComplete: { move(1) })
-                case .automations:
-                    AutomationsStep()
-                case .palette:
-                    PaletteStep()
-                case .appLock:
-                    AppLockOfferStep()
+                case .reminderTime:
+                    ReminderTimeStep()
                 case .done:
                     DoneStep()
                 }
@@ -53,8 +40,8 @@ struct WizardView: View {
     @ViewBuilder
     private var bottomBar: some View {
         if step == .signals {
-            // SignalsStep drives its own per-signal Turn On/Not now
-            // navigation so the screen never shows competing setup actions.
+            // SignalsStep owns its two choices because one path may request
+            // system permissions before continuing.
             EmptyView()
         } else if step != .done {
             HStack {
@@ -62,7 +49,7 @@ struct WizardView: View {
                     Button("Back") { move(-1) }
                 }
                 Spacer()
-                Button(step == .appLock ? "Continue" : "Next") { move(1) }
+                Button("Next") { move(1) }
                     .buttonStyle(.borderedProminent)
             }
             .padding()
@@ -101,7 +88,7 @@ private struct ProgressBar: View {
     }
 }
 
-private struct GeneratedDiaryStep: View {
+private struct DiaryModeStep: View {
     @EnvironmentObject private var settings: SettingsStore
 
     var body: some View {
@@ -111,30 +98,33 @@ private struct GeneratedDiaryStep: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 36)
 
-            Text("For days you miss")
+            Text("How should the diary work?")
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
+                Picker("When you write", selection: $settings.writingStyle) {
+                    ForEach(WritingStyle.allCases) { style in
+                        Text(style.displayName).tag(style)
+                    }
+                }
+
                 Toggle("Create diary drafts", isOn: $settings.generatedDiaryEnabled)
 
                 Text(settings.generatedDiaryEnabled
-                     ? "My Story turns collected facts into a simple draft you can edit."
-                     : "My Story shows collected facts as a list and does not write diary text for you.")
+                     ? "If you forget to write, My Story can make a plain draft from the facts it collected."
+                     : "If you turn this off, My Story only shows the facts it collected.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 24)
 
-            if settings.generatedDiaryEnabled {
-                VStack(alignment: .leading, spacing: 8) {
+                if settings.generatedDiaryEnabled {
                     Toggle("Smooth drafts on device", isOn: $settings.digestRewriteEnabled)
-                    Text("Optional. Uses the on-device language model when available. The plain draft is always the fallback.")
+                    Text("Optional. Keeps the draft human and plain when the on-device model is available.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 24)
             }
+            .padding(.horizontal, 24)
 
             Spacer()
         }
